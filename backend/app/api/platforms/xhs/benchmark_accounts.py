@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 import json
 import time
-from statistics import median
+from statistics import quantiles
 from typing import Any, Generator
 from urllib.parse import urlparse, urlunparse
 
@@ -263,21 +263,34 @@ def _pick_popular_notes(notes: list[dict[str, Any]]) -> tuple[list[dict[str, Any
 
     now_s = int(datetime.now(SHANGHAI_TZ).timestamp())
     with_rate = [(note, _note_daily_rate(note, now_s=now_s)) for note in notes]
+
     ranked = sorted(with_rate, key=lambda pair: pair[1], reverse=True)
-    rates = [pair[1] for pair in ranked]
-    median_rate = float(median(rates)) if rates else 0
-    threshold_rate = median_rate * 2 if median_rate > 0 else max(rates[0] if rates else 0, 0)
-    top_count = max(1, (len(ranked) + 4) // 5)
+    rates = sorted(pair[1] for pair in with_rate)
+
+    q1, _med, q3 = quantiles(rates, n=4)
+    iqr = q3 - q1
+
+    mild_threshold = q3 + 1.5 * iqr
+    extreme_threshold = q3 + 3.0 * iqr
+    floor_rate = max(50.0, q3 * 1.5)
+
+    final_threshold = max(floor_rate, mild_threshold)
 
     popular_pairs = [
-        pair
-        for index, pair in enumerate(ranked)
-        if index < top_count and _note_engagement(pair[0]) > 0 and pair[1] >= threshold_rate
+        pair for pair in ranked
+        if _note_engagement(pair[0]) > 0 and pair[1] >= final_threshold
     ]
-    if not popular_pairs and ranked and median_rate > 0 and ranked[0][1] >= median_rate * 1.5:
-        popular_pairs = [ranked[0]]
 
-    return [pair[0] for pair in popular_pairs], median_rate, threshold_rate
+    if not popular_pairs and extreme_threshold > mild_threshold:
+        relaxed_threshold = min(extreme_threshold, floor_rate)
+        popular_pairs = [
+            pair for pair in ranked
+            if _note_engagement(pair[0]) > 0 and pair[1] >= relaxed_threshold
+        ]
+        if len(popular_pairs) > 2:
+            popular_pairs = popular_pairs[:2]
+
+    return [pair[0] for pair in popular_pairs], final_threshold, extreme_threshold
 
 
 def _serialize_popular_note(note: dict[str, Any], baseline_daily_rate: float) -> dict[str, Any]:
