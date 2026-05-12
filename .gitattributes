@@ -1,0 +1,12 @@
+* text=auto eol=lf
+
+*.{ts,tsx,js,jsx,css,scss,html,json,yml,yaml} text eol=lf
+*.py text eol=lf
+*.md text eol=lf
+*.sh text eol=lf
+Dockerfile text eol=lf
+
+*.png binary
+*.jpg binary
+*.ico binary
+*.zip binary
