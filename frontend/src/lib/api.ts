@@ -701,6 +701,14 @@ export async function deleteBenchmarkAccount(targetId: number): Promise<{ id: nu
   return response.data;
 }
 
+export type CrawlDetailItem = {
+  index: number;
+  source: string;
+  status: string;
+  error?: string;
+  note?: { title?: string; likes?: number; collects?: number; comments?: number; shares?: number };
+};
+
 export async function crawlBenchmarkAccountPopularNotes(
   payload: {
     target_id: number;
@@ -709,7 +717,8 @@ export async function crawlBenchmarkAccountPopularNotes(
     max_notes: number;
     request_interval_seconds: number;
   },
-  onItem: (progress: string) => void,
+  onProgress: (progress: string) => void,
+  onDetailItem: (item: CrawlDetailItem) => void,
   onError: (error: string) => void,
 ): Promise<BenchmarkAccountCrawlResult | null> {
   const token = getAccessToken();
@@ -745,7 +754,16 @@ export async function crawlBenchmarkAccountPopularNotes(
           return event as unknown as BenchmarkAccountCrawlResult;
         }
         if (event.type === "progress") {
-          onItem(event.message);
+          onProgress(event.message);
+        }
+        if (event.type === "item") {
+          onDetailItem({
+            index: event.index ?? 0,
+            source: event.item?.source ?? "",
+            status: event.item?.status ?? "failed",
+            error: event.item?.error,
+            note: event.item?.note ? { title: event.item.note.title, likes: event.item.note.likes, collects: event.item.note.collects, comments: event.item.note.comments, shares: event.item.note.shares } : undefined,
+          });
         }
         if (event.type === "error") {
           onError(event.message);

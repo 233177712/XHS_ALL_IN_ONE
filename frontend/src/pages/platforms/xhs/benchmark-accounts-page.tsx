@@ -33,6 +33,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { PageHeader } from "../../../components/layout/app-shell";
+import type { CrawlDetailItem } from "../../../lib/api";
 import {
   configureBenchmarkAutoScan,
   crawlBenchmarkAccountPopularNotes,
@@ -132,6 +133,9 @@ export function BenchmarkAccountsPage() {
   const [isPopupModalOpen, setIsPopupModalOpen] = useState(false);
   const [isCrawling, setIsCrawling] = useState(false);
   const [crawlResult, setCrawlResult] = useState<BenchmarkAccountCrawlResult | null>(null);
+  const [crawlProgressItems, setCrawlProgressItems] = useState<CrawlDetailItem[]>([]);
+  const [crawlProgressMsg, setCrawlProgressMsg] = useState<string | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   const [isScanModalOpen, setIsScanModalOpen] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
@@ -237,6 +241,9 @@ export function BenchmarkAccountsPage() {
       ?? pcAccounts[0]?.id;
     setActiveTarget(target);
     setCrawlResult(null);
+    setCrawlProgressItems([]);
+    setCrawlProgressMsg(null);
+    setIsAnalyzing(false);
     setIsPopupModalOpen(true);
     form.setFieldsValue({
       account_id: defaultAccountId,
@@ -253,6 +260,9 @@ export function BenchmarkAccountsPage() {
     setError(null);
     setMessage(null);
     setCrawlResult(null);
+    setCrawlProgressItems([]);
+    setCrawlProgressMsg(null);
+    setIsAnalyzing(false);
     try {
       const result = await crawlBenchmarkAccountPopularNotes(
         {
@@ -262,7 +272,8 @@ export function BenchmarkAccountsPage() {
           max_notes: values.max_notes,
           request_interval_seconds: values.request_interval_seconds,
         },
-        (msg) => setMessage(msg),
+        (msg) => { setCrawlProgressMsg(msg); if (msg.includes("分析")) setIsAnalyzing(true); },
+        (item) => setCrawlProgressItems((prev) => [...prev, item]),
         (msg) => setError(msg),
       );
       if (result) {
@@ -275,6 +286,7 @@ export function BenchmarkAccountsPage() {
       setError("抓取爆款失败，请确认已绑定可用的 PC 账号。");
     } finally {
       setIsCrawling(false);
+      setIsAnalyzing(false);
     }
   }
 
@@ -600,6 +612,38 @@ export function BenchmarkAccountsPage() {
 
         {!activePcAccounts.length && !isLoadingAccounts && (
           <Alert type="warning" showIcon style={{ marginBottom: 16 }} message="还没有可用的 PC 账号，请先到账号矩阵绑定一个 PC 账号。" />
+        )}
+
+        {(isCrawling || crawlProgressItems.length > 0) && (
+          <div style={{ marginBottom: 16 }}>
+            {crawlProgressMsg && (
+              <Alert
+                type={isAnalyzing ? "warning" : "info"}
+                showIcon
+                message={crawlProgressMsg}
+                style={{ marginBottom: 12 }}
+              />
+            )}
+            {crawlProgressItems.length > 0 && (
+              <div style={{ background: "#141414", borderRadius: 8, maxHeight: 300, overflowY: "auto", padding: "8px 12px" }}>
+                {crawlProgressItems.map((item, index) => (
+                  <div key={index} style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 0", borderBottom: index < crawlProgressItems.length - 1 ? "1px solid #262626" : "none", fontSize: 13 }}>
+                    <span style={{ color: item.status === "success" ? "#52c41a" : "#ff4d4f", flexShrink: 0 }}>
+                      {item.status === "success" ? "✓" : "✗"}
+                    </span>
+                    <span style={{ color: "rgba(255,255,255,0.65)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }} title={item.note?.title || item.source}>
+                      {item.note?.title || item.source || `第 ${index + 1} 条`}
+                    </span>
+                    {item.note && (
+                      <span style={{ color: "rgba(255,255,255,0.45)", flexShrink: 0, fontSize: 12 }}>
+                        赞{item.note.likes} 藏{item.note.collects} 评{item.note.comments}
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         )}
 
         {crawlResult && (
