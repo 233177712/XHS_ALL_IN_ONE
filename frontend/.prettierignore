@@ -1,0 +1,5 @@
+# Auto-generated migration files - skip formatting
+../backend/alembic/versions/
+
+# Lock file - skip formatting
+package-lock.json

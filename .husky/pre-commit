@@ -1,3 +1,11 @@
+#!/usr/bin/env sh
+set -e
+
 ROOT_DIR=$(git rev-parse --show-toplevel)
+
 cd frontend && npx lint-staged
 cd "$ROOT_DIR" && ruff check backend/ tests/ spider/ xhs_utils/
+cd "$ROOT_DIR" && python scripts/check_arch.py
+cd "$ROOT_DIR" && python -m pytest tests/backend/test_platforms.py -x -q --tb=short
+
+echo "All pre-commit checks passed"

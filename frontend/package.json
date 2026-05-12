@@ -12,6 +12,8 @@
     "format": "prettier --write src/",
     "format:check": "prettier --check src/",
     "stylelint": "stylelint \"src/**/*.css\"",
+    "build:analyze": "tsc && vite build",
+    "test": "python -m pytest tests/backend/test_platforms.py -x -q",
     "prepare": "husky"
   },
   "dependencies": {
@@ -56,6 +58,7 @@
     "husky": "^9.1.7",
     "lint-staged": "^17.0.4",
     "prettier": "^3.8.3",
+    "rollup-plugin-visualizer": "^7.0.1",
     "stylelint": "^17.11.0",
     "stylelint-config-standard": "^40.0.0",
     "typescript": "^5.9.3"
