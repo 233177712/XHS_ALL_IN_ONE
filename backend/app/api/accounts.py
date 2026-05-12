@@ -15,7 +15,7 @@ from backend.app.core.deps import get_current_user
 from backend.app.core.security import decrypt_text
 from backend.app.core.time import shanghai_now
 from backend.app.models import AccountCookieVersion, PlatformAccount, User
-from backend.app.schemas.common import paginated
+from backend.app.schemas.common import paginated_query
 from backend.app.services.account_service import (
     account_profile_from_user_info,
     cookie_header_from_text,
@@ -93,12 +93,8 @@ def get_accounts(
     statement = select(PlatformAccount).where(PlatformAccount.user_id == current_user.id)
     if platform:
         statement = statement.where(PlatformAccount.platform == platform)
-    accounts = db.scalars(statement.order_by(PlatformAccount.created_at.desc())).all()
-    return paginated(
-        [serialize_account(account) for account in accounts],
-        page,
-        page_size,
-    )
+    statement = statement.order_by(PlatformAccount.created_at.desc())
+    return paginated_query(db, statement, page=page, page_size=page_size, map_item=serialize_account)
 
 
 @router.post("/import-cookie")

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from typing import Any, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -13,8 +12,9 @@ from backend.app.core.database import get_db
 from backend.app.core.deps import get_current_user
 from backend.app.core.time import shanghai_now
 from backend.app.models import MonitoringSnapshot, MonitoringTarget, Note, PlatformAccount, User
-from backend.app.schemas.common import paginated
+from backend.app.schemas.common import paginated_query
 from backend.app.services.monitoring_crawl_service import execute_monitoring_refresh
+from backend.app.services.note_util import note_matches_target, note_metrics
 
 router = APIRouter(prefix="/xhs/monitoring", tags=["xhs-monitoring"])
 
@@ -63,42 +63,6 @@ def _serialize_snapshot(snapshot: MonitoringSnapshot) -> dict[str, Any]:
     }
 
 
-def _as_int(value: Any) -> int:
-    if isinstance(value, bool):
-        return 0
-    if isinstance(value, (int, float)):
-        return int(value)
-    if isinstance(value, str):
-        cleaned = value.replace(",", "").strip()
-        if cleaned.isdigit():
-            return int(cleaned)
-    return 0
-
-
-def _first_metric(raw: dict[str, Any], keys: tuple[str, ...]) -> int:
-    for key in keys:
-        if key in raw:
-            return _as_int(raw.get(key))
-    return 0
-
-
-def _note_metrics(note: Note) -> dict[str, int]:
-    raw = note.raw_json or {}
-    interaction = raw.get("interact_info") if isinstance(raw.get("interact_info"), dict) else {}
-    merged = {**raw, **interaction}
-    likes = _first_metric(merged, ("likes", "liked_count", "like_count", "likedCount"))
-    collects = _first_metric(merged, ("collects", "collected_count", "collect_count", "collectedCount"))
-    comments = _first_metric(merged, ("comments", "comment_count", "commentCount"))
-    shares = _first_metric(merged, ("shares", "share_count", "shareCount"))
-    return {
-        "likes": likes,
-        "collects": collects,
-        "comments": comments,
-        "shares": shares,
-        "engagement": likes + collects + comments + shares,
-    }
-
-
 def _serialize_monitoring_note(note: Note) -> dict[str, Any]:
     return {
         "id": note.id,
@@ -106,21 +70,8 @@ def _serialize_monitoring_note(note: Note) -> dict[str, Any]:
         "title": note.title,
         "author_name": note.author_name,
         "created_at": note.created_at.isoformat(),
-        **_note_metrics(note),
+        **note_metrics(note),
     }
-
-
-def _note_haystack(note: Note) -> str:
-    raw_text = json.dumps(note.raw_json or {}, ensure_ascii=False)
-    return "\n".join([note.note_id, note.title, note.content, note.author_name, raw_text]).lower()
-
-
-def _note_matches_target(note: Note, target: MonitoringTarget) -> bool:
-    needle = target.value.strip().lower()
-    if not needle:
-        return False
-    haystack = _note_haystack(note)
-    return needle in haystack
 
 
 def _matching_notes(db: Session, current_user: User, target: MonitoringTarget) -> list[Note]:
@@ -132,8 +83,8 @@ def _matching_notes(db: Session, current_user: User, target: MonitoringTarget) -
         )
         .order_by(Note.created_at.desc(), Note.id.desc())
     ).all()
-    matched = [note for note in notes if _note_matches_target(note, target)]
-    return sorted(matched, key=lambda note: _note_metrics(note)["engagement"], reverse=True)
+    matched = [note for note in notes if note_matches_target(note, target)]
+    return sorted(matched, key=lambda note: note_metrics(note)["engagement"], reverse=True)
 
 
 def _get_owned_target(db: Session, current_user: User, target_id: int) -> MonitoringTarget:
@@ -150,12 +101,12 @@ def targets(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    rows = db.scalars(
+    statement = (
         select(MonitoringTarget)
         .where(MonitoringTarget.user_id == current_user.id, MonitoringTarget.platform == "xhs")
         .order_by(MonitoringTarget.created_at.desc(), MonitoringTarget.id.desc())
-    ).all()
-    return paginated([_serialize_target(target) for target in rows], page, page_size)
+    )
+    return paginated_query(db, statement, page=page, page_size=page_size, map_item=_serialize_target)
 
 
 @router.post("/targets")

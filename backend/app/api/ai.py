@@ -11,8 +11,8 @@ from sqlalchemy.orm import Session
 from backend.app.core.database import get_db
 from backend.app.core.deps import get_current_user
 from backend.app.core.security import decrypt_text
-from backend.app.models import AiDraft, AiGeneratedAsset, ModelConfig, Task, User
-from backend.app.schemas.common import paginated
+from backend.app.models import AiDraft, AiGeneratedAsset, DraftAsset, ModelConfig, Task, User
+from backend.app.schemas.common import paginated_query
 from backend.app.services.ai_service import ImageAiClient, OpenAICompatibleTextClient, ProviderAwareImageClient, TextAiClient
 
 router = APIRouter(prefix="/ai", tags=["ai"])
@@ -21,6 +21,8 @@ router = APIRouter(prefix="/ai", tags=["ai"])
 class RewriteNoteRequest(BaseModel):
     draft_id: int
     instruction: str = Field(default="", max_length=800)
+    include_images: bool = False
+    image_limit: int = Field(default=9, ge=1, le=12)
 
 
 class GenerateNoteRequest(BaseModel):
@@ -240,20 +242,57 @@ def rewrite_note(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Draft not found")
 
     model_config, api_key = _text_model_context(db, current_user)
-    task, rewritten_body = _recorded_text_task(
-        db=db,
-        current_user=current_user,
-        platform=draft.platform,
-        task_type="ai_rewrite",
-        payload={"draft_id": draft.id, "model_config_id": model_config.id, "instruction": payload.instruction},
-        action=lambda: text_ai_client.rewrite_note(
-            model_config=model_config,
-            api_key=api_key,
-            title=draft.title,
-            body=draft.body,
-            instruction=payload.instruction,
-        ),
-    )
+
+    if payload.include_images:
+        assets = db.scalars(
+            select(DraftAsset)
+            .where(DraftAsset.draft_id == draft.id, DraftAsset.asset_type == "image")
+            .order_by(DraftAsset.sort_order.asc())
+        ).all()
+        image_urls: list[str] = []
+        for a in assets:
+            resolved = f"/api/files/media/{a.local_path}" if a.local_path else a.url
+            if resolved:
+                image_urls.append(resolved)
+            if len(image_urls) >= payload.image_limit:
+                break
+
+        task, rewritten_body = _recorded_text_task(
+            db=db,
+            current_user=current_user,
+            platform=draft.platform,
+            task_type="ai_rewrite_with_images",
+            payload={
+                "draft_id": draft.id,
+                "model_config_id": model_config.id,
+                "instruction": payload.instruction,
+                "image_count": len(image_urls),
+                "asset_total": len(assets),
+            },
+            action=lambda: text_ai_client.rewrite_note_with_images(
+                model_config=model_config,
+                api_key=api_key,
+                title=draft.title,
+                body=draft.body,
+                instruction=payload.instruction,
+                image_urls=image_urls,
+            ),
+        )
+    else:
+        task, rewritten_body = _recorded_text_task(
+            db=db,
+            current_user=current_user,
+            platform=draft.platform,
+            task_type="ai_rewrite",
+            payload={"draft_id": draft.id, "model_config_id": model_config.id, "instruction": payload.instruction},
+            action=lambda: text_ai_client.rewrite_note(
+                model_config=model_config,
+                api_key=api_key,
+                title=draft.title,
+                body=draft.body,
+                instruction=payload.instruction,
+            ),
+        )
     draft.body = rewritten_body
     task.payload = {**(task.payload or {}), "result_draft_id": draft.id, "result_length": len(rewritten_body)}
     db.commit()
@@ -384,12 +423,12 @@ def generated_image_assets(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    assets = db.scalars(
+    statement = (
         select(AiGeneratedAsset)
         .where(AiGeneratedAsset.user_id == current_user.id)
         .order_by(AiGeneratedAsset.created_at.desc(), AiGeneratedAsset.id.desc())
-    ).all()
-    return paginated([_serialize_generated_asset(asset) for asset in assets], page, page_size)
+    )
+    return paginated_query(db, statement, page=page, page_size=page_size, map_item=_serialize_generated_asset)
 
 
 @router.delete("/images/assets/{asset_id}")

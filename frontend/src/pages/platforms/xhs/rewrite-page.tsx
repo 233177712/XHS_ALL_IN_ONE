@@ -549,6 +549,32 @@ export function XhsDraftsPage() {
     }
   }
 
+  async function handleRewriteWithImages() {
+    if (!selectedDraft) {
+      setError("请先选择一个草稿。");
+      return;
+    }
+    setIsRewriting(true);
+    clearStatus();
+    setRewritePreview(null);
+    try {
+      const saved = await updateDraft(selectedDraft.id, { title, body });
+      const rewritten = await rewriteDraftWithAi({
+        draft_id: saved.id,
+        instruction: systemPrompt + "\n" + instruction,
+        include_images: true,
+        image_limit: 9,
+      });
+      setRewritePreview(rewritten.body);
+      setMessage(`识图改写完成，参考了 ${imageAssets.length} 张图片中的内容。`);
+    } catch (err: unknown) {
+      const d = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+      setError(d || "识图改写失败，请确认已配置默认文本模型。");
+    } finally {
+      setIsRewriting(false);
+    }
+  }
+
   function applyRewrite() {
     if (rewritePreview !== null) {
       setBody(rewritePreview);
@@ -1001,6 +1027,16 @@ export function XhsDraftsPage() {
                   icon={<ExperimentOutlined />}
                 >
                   AI 改写正文
+                </Button>
+                <Button
+                  onClick={handleRewriteWithImages}
+                  loading={isRewriting}
+                  disabled={!selectedDraft || !hasImageAssets}
+                  block
+                  icon={<PictureOutlined />}
+                >
+                  识图改写
+                  {hasImageAssets ? ` (${Math.min(imageAssets.length, 9)}张图)` : ""}
                 </Button>
               </div>
 

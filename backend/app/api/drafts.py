@@ -13,7 +13,8 @@ from sqlalchemy.orm.attributes import flag_modified
 from backend.app.core.database import get_db
 from backend.app.core.deps import get_current_user
 from backend.app.models import AiDraft, DraftAsset, Note, NoteAsset, PlatformAccount, PublishAsset, PublishJob, User
-from backend.app.schemas.common import paginated
+from backend.app.schemas.common import paginated_query
+from backend.app.schemas.publish import serialize_publish_job
 
 router = APIRouter(prefix="/drafts", tags=["drafts"])
 
@@ -76,25 +77,6 @@ def _serialize_draft(draft: AiDraft) -> dict:
     }
 
 
-def _serialize_publish_job(job: PublishJob) -> dict:
-    try:
-        publish_options = json.loads(job.publish_options or "{}")
-    except json.JSONDecodeError:
-        publish_options = {}
-    return {
-        "id": job.id,
-        "platform_account_id": job.platform_account_id,
-        "source_draft_id": job.source_draft_id,
-        "platform": job.platform,
-        "title": job.title,
-        "body": job.body,
-        "publish_mode": job.publish_mode,
-        "publish_options": publish_options,
-        "status": job.status,
-        "scheduled_at": job.scheduled_at.isoformat() if job.scheduled_at else None,
-        "created_at": job.created_at.isoformat(),
-    }
-
 
 def _get_owned_source_note(db: Session, current_user: User, note_id: int) -> Note:
     note = db.get(Note, note_id)
@@ -114,8 +96,8 @@ def get_drafts(
     statement = select(AiDraft).where(AiDraft.user_id == current_user.id)
     if platform:
         statement = statement.where(AiDraft.platform == platform)
-    drafts = db.scalars(statement.order_by(AiDraft.created_at.desc())).all()
-    return paginated([_serialize_draft(draft) for draft in drafts], page, page_size)
+    statement = statement.order_by(AiDraft.created_at.desc())
+    return paginated_query(db, statement, page=page, page_size=page_size, map_item=_serialize_draft)
 
 
 @router.post("")
@@ -230,7 +212,7 @@ def send_draft_to_publish(
 
     db.commit()
     db.refresh(job)
-    return _serialize_publish_job(job)
+    return serialize_publish_job(job)
 
 
 @router.patch("/{draft_id}")

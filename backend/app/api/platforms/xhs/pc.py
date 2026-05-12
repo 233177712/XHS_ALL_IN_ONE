@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import re
 from typing import Any
 
@@ -10,6 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from backend.app.adapters.xhs.pc_api_adapter import XhsPcApiAdapter
+from backend.app.core.cookie_util import cookies_to_string
 from backend.app.core.database import get_db
 from backend.app.core.deps import get_current_user
 from backend.app.core.security import decrypt_text
@@ -43,16 +43,6 @@ class NoteCommentsRequest(BaseModel):
 
 def get_xhs_pc_api_adapter_factory():
     return XhsPcApiAdapter
-
-
-def _cookies_to_string(value: str) -> str:
-    stripped = value.strip()
-    if not stripped:
-        return stripped
-    if stripped.startswith("{"):
-        cookies = json.loads(stripped)
-        return "; ".join(f"{key}={cookie_value}" for key, cookie_value in cookies.items())
-    return stripped
 
 
 def _metric(value: Any) -> int:
@@ -292,7 +282,7 @@ def _get_owned_pc_account_cookies(db: Session, current_user: User, account_id: i
     ).first()
     if cookie_version is None:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Account has no cookies")
-    return _cookies_to_string(decrypt_text(cookie_version.encrypted_cookies))
+    return cookies_to_string(decrypt_text(cookie_version.encrypted_cookies))
 
 
 @router.post("/search/notes")

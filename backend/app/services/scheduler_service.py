@@ -12,6 +12,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from backend.app.adapters.xhs.creator_api_adapter import XhsCreatorApiAdapter
+from backend.app.core.cookie_util import cookies_to_string
 from backend.app.core.database import SessionLocal
 from backend.app.core.security import decrypt_text
 from backend.app.core.time import shanghai_now
@@ -30,16 +31,8 @@ from backend.app.models import (
     Task,
     User,
 )
-
-
-def _cookies_to_string(value: str) -> str:
-    stripped = value.strip()
-    if not stripped:
-        return stripped
-    if stripped.startswith("{"):
-        cookies = json.loads(stripped)
-        return "; ".join(f"{key}={cookie_value}" for key, cookie_value in cookies.items())
-    return stripped
+from backend.app.schemas.publish import serialize_publish_job
+from backend.app.services.note_util import note_matches_target, note_metrics
 
 
 def _latest_account_cookies(db: Session, account_id: int) -> str:
@@ -50,7 +43,7 @@ def _latest_account_cookies(db: Session, account_id: int) -> str:
     ).first()
     if cookie_version is None:
         raise RuntimeError("Account has no cookies")
-    return _cookies_to_string(decrypt_text(cookie_version.encrypted_cookies))
+    return cookies_to_string(decrypt_text(cookie_version.encrypted_cookies))
 
 
 def _asset_upload_info(asset: PublishAsset) -> dict[str, Any]:
@@ -73,23 +66,6 @@ def _external_note_id(payload: dict[str, Any]) -> str:
         return _external_note_id(data)
     return ""
 
-
-def _serialize_publish_job(job: PublishJob) -> dict[str, Any]:
-    return {
-        "id": job.id,
-        "platform_account_id": job.platform_account_id,
-        "source_draft_id": job.source_draft_id,
-        "platform": job.platform,
-        "title": job.title,
-        "body": job.body,
-        "publish_mode": job.publish_mode,
-        "status": job.status,
-        "scheduled_at": job.scheduled_at.isoformat() if job.scheduled_at else None,
-        "external_note_id": job.external_note_id,
-        "publish_error": job.publish_error,
-        "published_at": job.published_at.isoformat() if job.published_at else None,
-        "created_at": job.created_at.isoformat(),
-    }
 
 
 def _load_publish_options(job: PublishJob) -> dict[str, Any]:
@@ -166,7 +142,7 @@ def _run_one_due_publish_job(db: Session, current_user: User, job: PublishJob, a
         task.payload = {**(task.payload or {}), "external_note_id": job.external_note_id, "published_at": job.published_at.isoformat()}
         db.commit()
         db.refresh(job)
-        return True, _serialize_publish_job(job)
+        return True, serialize_publish_job(job)
     except Exception as exc:
         job.status = "failed"
         job.publish_error = str(exc)
@@ -175,7 +151,7 @@ def _run_one_due_publish_job(db: Session, current_user: User, job: PublishJob, a
         task.payload = {**(task.payload or {}), "error": str(exc)}
         db.commit()
         db.refresh(job)
-        return False, _serialize_publish_job(job)
+        return False, serialize_publish_job(job)
 
 
 def run_due_publish_jobs(
@@ -272,42 +248,6 @@ def run_due_publish_jobs_once(platform: str = "xhs", adapter_factory=XhsCreatorA
         db.close()
 
 
-def _as_int(value: Any) -> int:
-    if isinstance(value, bool):
-        return 0
-    if isinstance(value, (int, float)):
-        return int(value)
-    if isinstance(value, str):
-        cleaned = value.replace(",", "").strip()
-        if cleaned.isdigit():
-            return int(cleaned)
-    return 0
-
-
-def _first_metric(raw: dict[str, Any], keys: tuple[str, ...]) -> int:
-    for key in keys:
-        if key in raw:
-            return _as_int(raw.get(key))
-    return 0
-
-
-def _note_metrics(note: Note) -> dict[str, int]:
-    raw = note.raw_json or {}
-    interaction = raw.get("interact_info") if isinstance(raw.get("interact_info"), dict) else {}
-    merged = {**raw, **interaction}
-    likes = _first_metric(merged, ("likes", "liked_count", "like_count", "likedCount"))
-    collects = _first_metric(merged, ("collects", "collected_count", "collect_count", "collectedCount"))
-    comments = _first_metric(merged, ("comments", "comment_count", "commentCount"))
-    shares = _first_metric(merged, ("shares", "share_count", "shareCount"))
-    return {
-        "likes": likes,
-        "collects": collects,
-        "comments": comments,
-        "shares": shares,
-        "engagement": likes + collects + comments + shares,
-    }
-
-
 def _serialize_monitoring_note(note: Note) -> dict[str, Any]:
     return {
         "id": note.id,
@@ -315,20 +255,8 @@ def _serialize_monitoring_note(note: Note) -> dict[str, Any]:
         "title": note.title,
         "author_name": note.author_name,
         "created_at": note.created_at.isoformat(),
-        **_note_metrics(note),
+        **note_metrics(note),
     }
-
-
-def _note_haystack(note: Note) -> str:
-    raw_text = json.dumps(note.raw_json or {}, ensure_ascii=False)
-    return "\n".join([note.note_id, note.title, note.content, note.author_name, raw_text]).lower()
-
-
-def _note_matches_target(note: Note, target: MonitoringTarget) -> bool:
-    needle = target.value.strip().lower()
-    if not needle:
-        return False
-    return needle in _note_haystack(note)
 
 
 def _matching_notes_for_target(db: Session, target: MonitoringTarget, platform: str) -> list[Note]:
@@ -340,15 +268,15 @@ def _matching_notes_for_target(db: Session, target: MonitoringTarget, platform: 
         )
         .order_by(Note.created_at.desc(), Note.id.desc())
     ).all()
-    matched = [note for note in notes if _note_matches_target(note, target)]
-    return sorted(matched, key=lambda note: _note_metrics(note)["engagement"], reverse=True)
+    matched = [note for note in notes if note_matches_target(note, target)]
+    return sorted(matched, key=lambda note: note_metrics(note)["engagement"], reverse=True)
 
 
 def _refresh_monitoring_target(db: Session, target: MonitoringTarget, now: datetime, platform: str) -> dict[str, Any]:
     matched_notes = _matching_notes_for_target(db, target, platform)
     snapshot_payload = {
         "matched_count": len(matched_notes),
-        "total_engagement": sum(_note_metrics(note)["engagement"] for note in matched_notes),
+        "total_engagement": sum(note_metrics(note)["engagement"] for note in matched_notes),
         "top_notes": [_serialize_monitoring_note(note) for note in matched_notes[:10]],
     }
     target.last_refreshed_at = now
@@ -422,16 +350,6 @@ def _get_text_model_for_user(db: Session, user_id: int):
     return config, decrypt_text(config.encrypted_api_key)
 
 
-def _scheduler_cookies_to_string(value: str) -> str:
-    stripped = value.strip()
-    if not stripped:
-        return stripped
-    if stripped.startswith("{"):
-        cookies = json.loads(stripped)
-        return "; ".join(f"{k}={v}" for k, v in cookies.items())
-    return stripped
-
-
 def _execute_auto_task_background(db: Session, task: AutoTask) -> None:
     """Simplified auto-task execution for background scheduler."""
     import random
@@ -452,7 +370,7 @@ def _execute_auto_task_background(db: Session, task: AutoTask) -> None:
     ).first()
     if not cookie_version:
         return
-    cookies = _scheduler_cookies_to_string(decrypt_text(cookie_version.encrypted_cookies))
+    cookies = cookies_to_string(decrypt_text(cookie_version.encrypted_cookies))
 
     # Pick keyword
     keywords = task.keywords or []
@@ -527,7 +445,7 @@ def _execute_auto_task_background(db: Session, task: AutoTask) -> None:
     ).first()
     if not creator_cv:
         return
-    creator_cookies = _scheduler_cookies_to_string(decrypt_text(creator_cv.encrypted_cookies))
+    creator_cookies = cookies_to_string(decrypt_text(creator_cv.encrypted_cookies))
 
     # Upload images and create publish job
     from backend.app.adapters.xhs.creator_api_adapter import XhsCreatorApiAdapter as AutoCreatorAdapter

@@ -13,6 +13,7 @@
     "format:check": "prettier --check src/",
     "stylelint": "stylelint \"src/**/*.css\"",
     "build:analyze": "tsc && vite build",
+    "find:deadcode": "npx ts-prune -p tsconfig.json",
     "test": "python -m pytest tests/backend/test_platforms.py -x -q",
     "prepare": "husky"
   },
@@ -21,10 +22,8 @@
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
-    "@vitejs/plugin-react": "^5.1.2",
     "antd": "^6.3.7",
     "axios": "^1.13.2",
-    "eslint-plugin-react-hooks": "^5.2.0",
     "keepalive-for-react": "^5.0.11",
     "keepalive-for-react-router": "^5.0.7",
     "lucide-react": "^0.562.0",
@@ -50,6 +49,9 @@
   },
   "devDependencies": {
     "@types/react": "^19.2.14",
+    "@vitejs/plugin-react": "^5.1.2",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "vite": "^7.3.0",
     "@types/react-dom": "^19.2.3",
     "@typescript-eslint/eslint-plugin": "^7.18.0",
     "@typescript-eslint/parser": "^7.18.0",
@@ -61,6 +63,7 @@
     "rollup-plugin-visualizer": "^7.0.1",
     "stylelint": "^17.11.0",
     "stylelint-config-standard": "^40.0.0",
+    "ts-prune": "^0.10.3",
     "typescript": "^5.9.3"
   }
 }

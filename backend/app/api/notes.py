@@ -10,20 +10,20 @@ from uuid import uuid4
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 from sqlalchemy import delete, or_, select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from backend.app.api.platforms.xhs.pc import (
-    _cookies_to_string,
     get_xhs_pc_api_adapter_factory,
     normalize_comment_payload,
 )
 from backend.app.core.config import get_settings
+from backend.app.core.cookie_util import cookies_to_string
 from backend.app.core.database import get_db
 from backend.app.core.deps import get_current_user
 from backend.app.core.security import decrypt_text
 from backend.app.core.time import shanghai_now
 from backend.app.models import AccountCookieVersion, AiDraft, Note, NoteAsset, NoteComment, PlatformAccount, Tag, User, note_tags
-from backend.app.schemas.common import paginated
+from backend.app.schemas.common import paginated, paginated_query
 
 router = APIRouter(prefix="/notes", tags=["notes"])
 
@@ -117,7 +117,7 @@ def _serialize_note(db: Session, note: Note) -> dict:
 
 def _serialize_note_with_tags(db: Session, note: Note) -> dict:
     serialized = _serialize_note(db, note)
-    serialized["tags"] = _get_note_tags(db, note.id)
+    serialized["tags"] = [_serialize_tag(tag) for tag in note.tags] if note.tags else _get_note_tags(db, note.id)
     return serialized
 
 
@@ -194,7 +194,7 @@ def _get_latest_account_cookies(db: Session, account: PlatformAccount) -> str:
     ).first()
     if cookie_version is None:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Account has no cookies")
-    return _cookies_to_string(decrypt_text(cookie_version.encrypted_cookies))
+    return cookies_to_string(decrypt_text(cookie_version.encrypted_cookies))
 
 
 def _get_owned_note(db: Session, current_user: User, note_id: int) -> Note:
@@ -238,6 +238,7 @@ def get_notes(
 ):
     statement = (
         select(Note)
+        .options(selectinload(Note.tags))
         .where(Note.user_id == current_user.id)
     )
     if platform:
@@ -265,8 +266,11 @@ def get_notes(
         statement = statement.where(Note.id.in_(select(NoteComment.note_id)))
     elif has_comments is False:
         statement = statement.where(Note.id.not_in(select(NoteComment.note_id)))
-    notes = db.scalars(statement.order_by(Note.created_at.desc())).all()
-    return paginated([_serialize_note_with_tags(db, note) for note in notes], page, page_size)
+    statement = statement.order_by(Note.created_at.desc())
+    return paginated_query(
+        db, statement, page=page, page_size=page_size,
+        map_item=lambda note: _serialize_note_with_tags(db, note),
+    )
 
 
 @router.post("/batch-create-drafts")

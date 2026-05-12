@@ -28,7 +28,7 @@ from backend.app.models import (
     Task,
     User,
 )
-from backend.app.schemas.common import paginated
+from backend.app.schemas.common import paginated_query
 from backend.app.services.ai_service import OpenAICompatibleTextClient
 
 router = APIRouter(prefix="/auto-tasks", tags=["auto-tasks"])
@@ -103,7 +103,7 @@ def _verify_account_ownership(db: Session, current_user: User, account_id: int, 
 
 
 def _get_account_cookies(db: Session, account_id: int) -> str:
-    from backend.app.api.publish import _cookies_to_string
+    from backend.app.core.cookie_util import cookies_to_string as _cookies_to_string
 
     cookie_version = db.scalars(
         select(AccountCookieVersion)
@@ -148,12 +148,12 @@ def list_auto_tasks(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    tasks = db.scalars(
+    statement = (
         select(AutoTask)
         .where(AutoTask.user_id == current_user.id)
         .order_by(AutoTask.created_at.desc(), AutoTask.id.desc())
-    ).all()
-    return paginated([_serialize_auto_task(t) for t in tasks], page, page_size)
+    )
+    return paginated_query(db, statement, page=page, page_size=page_size, map_item=_serialize_auto_task)
 
 
 @router.post("")

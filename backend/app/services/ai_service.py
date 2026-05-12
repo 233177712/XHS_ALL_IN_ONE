@@ -31,6 +31,18 @@ class TextAiClient(Protocol):
     ) -> str:
         ...
 
+    def rewrite_note_with_images(
+        self,
+        *,
+        model_config: ModelConfig,
+        api_key: str,
+        title: str,
+        body: str,
+        instruction: str,
+        image_urls: list[str],
+    ) -> str:
+        ...
+
     def generate_note(
         self,
         *,
@@ -180,6 +192,26 @@ def _parse_size(value: str) -> tuple[int, int] | None:
     return width, height
 
 
+def _resolve_image_ref(url: str) -> str:
+    if url.startswith("http://") or url.startswith("https://"):
+        return url
+    local = _local_media_path_from_api_url(url)
+    if local is not None:
+        import base64
+
+        raw = local.read_bytes()
+        ext = local.suffix.lower().lstrip(".")
+        mime = {
+            "jpg": "image/jpeg",
+            "jpeg": "image/jpeg",
+            "png": "image/png",
+            "gif": "image/gif",
+            "webp": "image/webp",
+        }.get(ext, "image/png")
+        return f"data:{mime};base64,{base64.b64encode(raw).decode()}"
+    return url
+
+
 class OpenAICompatibleTextClient:
     def _complete(
         self,
@@ -220,6 +252,75 @@ class OpenAICompatibleTextClient:
         if not isinstance(content, str) or not content.strip():
             raise ValueError("AI response content is empty")
         return content.strip()
+
+    def _complete_with_images(
+        self,
+        *,
+        model_config: ModelConfig,
+        api_key: str,
+        system_prompt: str,
+        user_prompt: str,
+        image_urls: list[str],
+        temperature: float = 0.7,
+    ) -> str:
+        if not model_config.base_url:
+            raise ValueError("Text model base_url is required")
+        if not model_config.model_name:
+            raise ValueError("Text model model_name is required")
+        if not api_key:
+            raise ValueError("Text model api_key is required")
+
+        resolved = [_resolve_image_ref(url) for url in image_urls if url]
+        content_parts: list[dict[str, Any]] = [{"type": "text", "text": user_prompt}]
+        for ref in resolved:
+            content_parts.append({"type": "image_url", "image_url": {"url": ref}})
+
+        endpoint = f"{model_config.base_url.rstrip('/')}/chat/completions"
+        response = requests.post(
+            endpoint,
+            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+            json={
+                "model": model_config.model_name,
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": content_parts},
+                ],
+                "temperature": temperature,
+                "max_tokens": 4096,
+            },
+            timeout=180,
+        )
+        response.raise_for_status()
+        payload = _load_json_response(response)
+        try:
+            content = payload["choices"][0]["message"]["content"]
+        except (KeyError, IndexError, TypeError) as exc:
+            raise ValueError("AI response missing choices[0].message.content") from exc
+        if not isinstance(content, str) or not content.strip():
+            raise ValueError("AI response content is empty")
+        return content.strip()
+
+    def rewrite_note_with_images(
+        self,
+        *,
+        model_config: ModelConfig,
+        api_key: str,
+        title: str,
+        body: str,
+        instruction: str,
+        image_urls: list[str],
+    ) -> str:
+        return self._complete_with_images(
+            model_config=model_config,
+            api_key=api_key,
+            system_prompt="你是小红书内容运营编辑，负责在保留事实的前提下改写成自然、可发布的种草笔记。"
+            "你会先阅读所有图片中的可见文字和关键信息，再结合正文进行改写。",
+            user_prompt=(
+                f"改写要求：{instruction or '提升表达、增强小红书语感'}\n\n"
+                f"标题：{title}\n\n正文：\n{body}"
+            ),
+            image_urls=image_urls,
+        )
 
     def rewrite_note(
         self,
@@ -394,23 +495,7 @@ class OpenAICompatibleImageClient:
 
     @staticmethod
     def _resolve_image_ref(url: str) -> str:
-        if url.startswith("http://") or url.startswith("https://"):
-            return url
-        local = _local_media_path_from_api_url(url)
-        if local is not None:
-            import base64
-
-            raw = local.read_bytes()
-            ext = local.suffix.lower().lstrip(".")
-            mime = {
-                "jpg": "image/jpeg",
-                "jpeg": "image/jpeg",
-                "png": "image/png",
-                "gif": "image/gif",
-                "webp": "image/webp",
-            }.get(ext, "image/png")
-            return f"data:{mime};base64,{base64.b64encode(raw).decode()}"
-        return url
+        return _resolve_image_ref(url)
 
     def describe_image(
         self,

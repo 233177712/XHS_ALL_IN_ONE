@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from typing import Any, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -12,7 +11,8 @@ from backend.app.core.database import get_db
 from backend.app.core.deps import get_current_user
 from backend.app.core.time import shanghai_now
 from backend.app.models import KeywordGroup, Note, User
-from backend.app.schemas.common import paginated
+from backend.app.schemas.common import paginated_query
+from backend.app.services.note_util import note_haystack, note_metrics
 
 router = APIRouter(prefix="/keyword-groups", tags=["keyword-groups"])
 
@@ -60,46 +60,6 @@ def _get_owned_group(db: Session, current_user: User, group_id: int) -> KeywordG
     return group
 
 
-def _as_int(value: Any) -> int:
-    if isinstance(value, bool) or value is None:
-        return 0
-    if isinstance(value, (int, float)):
-        return int(value)
-    if isinstance(value, str):
-        cleaned = value.strip().lower().replace(",", "")
-        multiplier = 1
-        if cleaned.endswith("w"):
-            multiplier = 10000
-            cleaned = cleaned[:-1]
-        try:
-            return int(float(cleaned) * multiplier)
-        except ValueError:
-            return 0
-    return 0
-
-
-def _note_metrics(note: Note) -> dict[str, int]:
-    raw = note.raw_json or {}
-    interaction = raw.get("interact_info") if isinstance(raw.get("interact_info"), dict) else {}
-    merged = {**raw, **interaction}
-    likes = _as_int(merged.get("likes") or merged.get("liked_count") or merged.get("like_count"))
-    collects = _as_int(merged.get("collects") or merged.get("collected_count") or merged.get("collect_count"))
-    comments = _as_int(merged.get("comments") or merged.get("comment_count"))
-    shares = _as_int(merged.get("shares") or merged.get("share_count"))
-    return {
-        "likes": likes,
-        "collects": collects,
-        "comments": comments,
-        "shares": shares,
-        "engagement": likes + collects + comments + shares,
-    }
-
-
-def _note_haystack(note: Note) -> str:
-    raw_text = json.dumps(note.raw_json or {}, ensure_ascii=False)
-    return "\n".join([note.note_id, note.title, note.content, note.author_name, raw_text]).lower()
-
-
 def _owned_notes(db: Session, current_user: User, platform: str) -> list[Note]:
     return db.scalars(
         select(Note)
@@ -114,11 +74,11 @@ def _trend_summary(db: Session, current_user: User, group: KeywordGroup) -> dict
     matched_by_note_id: dict[int, dict[str, Any]] = {}
     for keyword in group.keywords or []:
         needle = keyword.lower()
-        matched_notes = [note for note in notes if needle in _note_haystack(note)]
-        engagement = sum(_note_metrics(note)["engagement"] for note in matched_notes)
+        matched_notes = [note for note in notes if needle in note_haystack(note)]
+        engagement = sum(note_metrics(note)["engagement"] for note in matched_notes)
         keyword_items.append({"keyword": keyword, "notes": len(matched_notes), "engagement": engagement})
         for note in matched_notes:
-            metrics = _note_metrics(note)
+            metrics = note_metrics(note)
             matched_by_note_id[note.id] = {
                 "id": note.id,
                 "note_id": note.note_id,
@@ -147,8 +107,8 @@ def list_keyword_groups(
     statement = select(KeywordGroup).where(KeywordGroup.user_id == current_user.id)
     if platform:
         statement = statement.where(KeywordGroup.platform == platform)
-    groups = db.scalars(statement.order_by(KeywordGroup.created_at.desc(), KeywordGroup.id.desc())).all()
-    return paginated([_serialize_group(group) for group in groups], page, page_size)
+    statement = statement.order_by(KeywordGroup.created_at.desc(), KeywordGroup.id.desc())
+    return paginated_query(db, statement, page=page, page_size=page_size, map_item=_serialize_group)
 
 
 @router.post("")

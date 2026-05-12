@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 
 from sqlalchemy import JSON, Column, DateTime, ForeignKey, Integer, String, Table, Text
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.app.core.database import Base
 from backend.app.core.time import shanghai_now
@@ -29,6 +29,8 @@ class Note(Base):
     author_name: Mapped[str] = mapped_column(String(128), default="")
     raw_json: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=shanghai_now)
+
+    tags: Mapped[list[Tag]] = relationship(secondary=note_tags, order_by="Tag.id")
 
 
 class NoteAsset(Base):

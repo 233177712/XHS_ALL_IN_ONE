@@ -12,7 +12,7 @@ from backend.app.core.database import get_db
 from backend.app.core.deps import get_current_user
 from backend.app.core.security import encrypt_text
 from backend.app.models import DEFAULT_TEXT_MODEL_NAME, ModelConfig, User
-from backend.app.schemas.common import paginated
+from backend.app.schemas.common import paginated_query
 
 router = APIRouter(prefix="/model-configs", tags=["model-configs"])
 
@@ -110,8 +110,8 @@ def get_model_configs(
     statement = select(ModelConfig).where(ModelConfig.user_id == current_user.id)
     if model_type:
         statement = statement.where(ModelConfig.model_type == model_type)
-    configs = db.scalars(statement.order_by(ModelConfig.id.desc())).all()
-    return paginated([_serialize_config(config) for config in configs], page, page_size)
+    statement = statement.order_by(ModelConfig.id.desc())
+    return paginated_query(db, statement, page=page, page_size=page_size, map_item=_serialize_config)
 
 
 @router.post("")

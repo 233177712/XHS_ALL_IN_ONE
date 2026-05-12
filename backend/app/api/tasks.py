@@ -9,7 +9,7 @@ from backend.app.core.config import get_settings
 from backend.app.core.database import get_db
 from backend.app.core.deps import get_current_user
 from backend.app.models import Task, User
-from backend.app.schemas.common import paginated
+from backend.app.schemas.common import paginated_query
 from backend.app.services.scheduler_service import run_due_publish_jobs
 
 router = APIRouter(prefix="/tasks", tags=["tasks"])
@@ -63,8 +63,8 @@ def get_tasks(
     statement = select(Task).where(Task.user_id == current_user.id)
     if platform:
         statement = statement.where(Task.platform == platform)
-    tasks = db.scalars(statement.order_by(Task.created_at.desc(), Task.id.desc())).all()
-    return paginated([serialize_task(task) for task in tasks], page, page_size)
+    statement = statement.order_by(Task.created_at.desc(), Task.id.desc())
+    return paginated_query(db, statement, page=page, page_size=page_size, map_item=serialize_task)
 
 
 @router.post("/run-due")

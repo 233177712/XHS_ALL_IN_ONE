@@ -27,7 +27,7 @@ from backend.app.core.database import get_db
 from backend.app.core.deps import get_current_user
 from backend.app.core.time import SHANGHAI_TZ, shanghai_now
 from backend.app.models import MonitoringTarget, PlatformAccount, User
-from backend.app.schemas.common import paginated
+from backend.app.schemas.common import paginated_query
 from backend.app.services.monitoring_crawl_service import _decrypt_cookies
 
 router = APIRouter(prefix="/xhs/benchmark-accounts", tags=["xhs-benchmark-accounts"])
@@ -319,7 +319,7 @@ def list_benchmark_accounts(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    rows = db.scalars(
+    all_rows = db.scalars(
         select(MonitoringTarget)
         .where(
             MonitoringTarget.user_id == current_user.id,
@@ -329,7 +329,7 @@ def list_benchmark_accounts(
         .order_by(MonitoringTarget.created_at.desc(), MonitoringTarget.id.desc())
     ).all()
     mutated = False
-    for target in rows:
+    for target in all_rows:
         if _profile_is_complete(target):
             continue
         account = _find_active_pc_account(db, current_user, target.platform_account_id)
@@ -339,7 +339,7 @@ def list_benchmark_accounts(
         mutated = True
     if mutated:
         db.commit()
-        for target in rows:
+        for target in all_rows:
             db.refresh(target)
 
     monitored_counts: dict[int, int] = {}
@@ -356,7 +356,16 @@ def list_benchmark_accounts(
         if isinstance(source_id, int) and source_id > 0:
             monitored_counts[source_id] = monitored_counts.get(source_id, 0) + 1
 
-    result = paginated([_serialize_target(target) for target in rows], page, page_size)
+    statement = (
+        select(MonitoringTarget)
+        .where(
+            MonitoringTarget.user_id == current_user.id,
+            MonitoringTarget.platform == "xhs",
+            MonitoringTarget.target_type == "account",
+        )
+        .order_by(MonitoringTarget.created_at.desc(), MonitoringTarget.id.desc())
+    )
+    result = paginated_query(db, statement, page=page, page_size=page_size, map_item=_serialize_target)
     for item in result["items"]:
         tid = item.get("id")
         if isinstance(tid, int):

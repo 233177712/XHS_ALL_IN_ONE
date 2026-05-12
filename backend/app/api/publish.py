@@ -10,12 +10,14 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from backend.app.adapters.xhs.creator_api_adapter import XhsCreatorApiAdapter
+from backend.app.core.cookie_util import cookies_to_string
 from backend.app.core.database import get_db
 from backend.app.core.deps import get_current_user
 from backend.app.core.security import decrypt_text
 from backend.app.core.time import shanghai_now
 from backend.app.models import AccountCookieVersion, PlatformAccount, PublishAsset, PublishJob, Task, User
-from backend.app.schemas.common import paginated
+from backend.app.schemas.common import paginated_query
+from backend.app.schemas.publish import serialize_publish_job
 
 router = APIRouter(prefix="/publish", tags=["publish"])
 
@@ -109,24 +111,6 @@ def _apply_publish_options(note_info: dict[str, Any], options: dict[str, Any]) -
         note_info["type"] = privacy_type
 
 
-def serialize_publish_job(job: PublishJob) -> dict:
-    return {
-        "id": job.id,
-        "platform_account_id": job.platform_account_id,
-        "source_draft_id": job.source_draft_id,
-        "platform": job.platform,
-        "title": job.title,
-        "body": job.body,
-        "publish_mode": job.publish_mode,
-        "publish_options": _load_publish_options(job),
-        "status": job.status,
-        "scheduled_at": job.scheduled_at.isoformat() if job.scheduled_at else None,
-        "external_note_id": job.external_note_id,
-        "publish_error": job.publish_error,
-        "published_at": job.published_at.isoformat() if job.published_at else None,
-        "created_at": job.created_at.isoformat(),
-    }
-
 
 def serialize_publish_asset(asset: PublishAsset) -> dict:
     try:
@@ -143,16 +127,6 @@ def serialize_publish_asset(asset: PublishAsset) -> dict:
         "upload_error": asset.upload_error,
         "creator_upload_info": creator_upload_info,
     }
-
-
-def _cookies_to_string(value: str) -> str:
-    stripped = value.strip()
-    if not stripped:
-        return stripped
-    if stripped.startswith("{"):
-        cookies = json.loads(stripped)
-        return "; ".join(f"{key}={cookie_value}" for key, cookie_value in cookies.items())
-    return stripped
 
 
 def _extract_creator_media_id(payload: dict[str, Any]) -> str:
@@ -226,7 +200,7 @@ def _get_latest_account_cookies(db: Session, account_id: int) -> str:
     ).first()
     if cookie_version is None:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Account has no cookies")
-    return _cookies_to_string(decrypt_text(cookie_version.encrypted_cookies))
+    return cookies_to_string(decrypt_text(cookie_version.encrypted_cookies))
 
 
 def _record_publish_control_task(db: Session, current_user: User, job: PublishJob, task_type: str) -> None:
@@ -259,8 +233,8 @@ def get_publish_jobs(
     )
     if platform:
         statement = statement.where(PublishJob.platform == platform)
-    jobs = db.scalars(statement.order_by(PublishJob.created_at.desc(), PublishJob.id.desc())).all()
-    return paginated([serialize_publish_job(job) for job in jobs], page, page_size)
+    statement = statement.order_by(PublishJob.created_at.desc(), PublishJob.id.desc())
+    return paginated_query(db, statement, page=page, page_size=page_size, map_item=serialize_publish_job)
 
 
 @router.get("/jobs/{job_id}")
@@ -364,10 +338,8 @@ def get_publish_assets(
     db: Session = Depends(get_db),
 ):
     job = _get_owned_publish_job(db, current_user, job_id)
-    assets = db.scalars(
-        select(PublishAsset).where(PublishAsset.publish_job_id == job.id).order_by(PublishAsset.id.asc())
-    ).all()
-    return paginated([serialize_publish_asset(asset) for asset in assets], page, page_size)
+    statement = select(PublishAsset).where(PublishAsset.publish_job_id == job.id).order_by(PublishAsset.id.asc())
+    return paginated_query(db, statement, page=page, page_size=page_size, map_item=serialize_publish_asset)
 
 
 @router.post("/jobs/{job_id}/assets")

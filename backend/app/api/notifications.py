@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from backend.app.core.database import get_db
 from backend.app.core.deps import get_current_user
 from backend.app.models import Notification, User
-from backend.app.schemas.common import paginated
+from backend.app.schemas.common import paginated_query
 
 router = APIRouter(prefix="/notifications", tags=["notifications"])
 
@@ -37,8 +37,8 @@ def list_notifications(
     stmt = select(Notification).where(Notification.user_id == current_user.id)
     if unread is True:
         stmt = stmt.where(Notification.read.is_(False))
-    items = db.scalars(stmt.order_by(Notification.created_at.desc())).all()
-    return paginated([serialize_notification(n) for n in items], page, page_size)
+    stmt = stmt.order_by(Notification.created_at.desc())
+    return paginated_query(db, stmt, page=page, page_size=page_size, map_item=serialize_notification)
 
 
 @router.post("/{notification_id}/read")

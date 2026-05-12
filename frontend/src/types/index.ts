@@ -360,6 +360,8 @@ export type ModelConfigPayload = {
 export type RewriteDraftPayload = {
   draft_id: number;
   instruction?: string;
+  include_images?: boolean;
+  image_limit?: number;
 };
 
 export type GenerateNotePayload = {

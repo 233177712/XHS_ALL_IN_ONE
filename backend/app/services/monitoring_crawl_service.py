@@ -120,8 +120,9 @@ def _make_snapshot(db: Session, target: MonitoringTarget, user: User) -> Monitor
         .order_by(Note.created_at.desc())
     ).all()
 
-    from backend.app.api.platforms.xhs.monitoring import _note_matches_target, _serialize_monitoring_note
-    matched = [n for n in notes if _note_matches_target(n, target)]
+    from backend.app.api.platforms.xhs.monitoring import _serialize_monitoring_note
+    from backend.app.services.note_util import note_matches_target
+    matched = [n for n in notes if note_matches_target(n, target)]
     matched.sort(key=_note_engagement, reverse=True)
 
     payload = {

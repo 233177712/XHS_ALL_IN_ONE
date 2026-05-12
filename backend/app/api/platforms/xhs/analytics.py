@@ -17,6 +17,7 @@ from backend.app.core.database import get_db
 from backend.app.core.deps import get_current_user
 from backend.app.core.time import shanghai_now
 from backend.app.models import AiDraft, KeywordGroup, MonitoringTarget, Note, NoteComment, PlatformAccount, PublishJob, Tag, User, note_tags
+from backend.app.services.note_util import as_int, note_matches_value, note_metrics
 
 router = APIRouter(prefix="/xhs/analytics", tags=["xhs-analytics"])
 
@@ -34,42 +35,17 @@ METRIC_KEYS = {
 }
 
 
-def _as_int(value: Any) -> int:
-    if isinstance(value, bool) or value is None:
-        return 0
-    if isinstance(value, (int, float)):
-        return int(value)
-    if isinstance(value, str):
-        cleaned = value.strip().lower().replace(",", "")
-        multiplier = 1
-        if cleaned.endswith("w"):
-            multiplier = 10000
-            cleaned = cleaned[:-1]
-        try:
-            return int(float(cleaned) * multiplier)
-        except ValueError:
-            return 0
-    return 0
-
-
 def _raw_value(raw: dict[str, Any], keys: tuple[str, ...]) -> int:
     for key in keys:
         if key in raw:
-            return _as_int(raw.get(key))
+            return as_int(raw.get(key))
         data = raw.get("data")
         if isinstance(data, dict) and key in data:
-            return _as_int(data.get(key))
+            return as_int(data.get(key))
         note = raw.get("note")
         if isinstance(note, dict) and key in note:
-            return _as_int(note.get(key))
+            return as_int(note.get(key))
     return 0
-
-
-def _note_metrics(note: Note) -> dict[str, int]:
-    raw = note.raw_json or {}
-    metrics = {name: _raw_value(raw, keys) for name, keys in METRIC_KEYS.items()}
-    metrics["engagement"] = sum(metrics.values())
-    return metrics
 
 
 def _owned_notes_statement(current_user: User):
@@ -83,27 +59,8 @@ def _owned_notes(db: Session, current_user: User) -> list[Note]:
     return db.scalars(_owned_notes_statement(current_user).order_by(Note.created_at.desc())).all()
 
 
-def _note_haystack(note: Note) -> str:
-    return "\n".join(
-        [
-            note.note_id or "",
-            note.title or "",
-            note.content or "",
-            note.author_name or "",
-            str(note.raw_json or {}),
-        ]
-    ).lower()
-
-
-def _note_matches_value(note: Note, value: str) -> bool:
-    needle = value.strip().lower()
-    if not needle:
-        return False
-    return needle in _note_haystack(note)
-
-
 def _serialize_top_note(note: Note) -> dict[str, Any]:
-    metrics = _note_metrics(note)
+    metrics = note_metrics(note)
     return {
         "id": note.id,
         "note_id": note.note_id,
@@ -135,8 +92,8 @@ def _get_owned_benchmark_target(db: Session, current_user: User, target_id: int)
 
 
 def _benchmark_matches(notes: list[Note], target: MonitoringTarget) -> list[Note]:
-    matched = [note for note in notes if _note_matches_value(note, target.value)]
-    return sorted(matched, key=lambda note: _note_metrics(note)["engagement"], reverse=True)
+    matched = [note for note in notes if note_matches_value(note, target.value)]
+    return sorted(matched, key=lambda note: note_metrics(note)["engagement"], reverse=True)
 
 
 def _raw_topics(raw: dict[str, Any]) -> list[str]:
@@ -173,7 +130,7 @@ def _topic_items(db: Session, current_user: User, notes: list[Note]) -> list[dic
 
     items: list[dict[str, Any]] = []
     for keyword, note_ids in topic_note_ids.items():
-        engagement = sum(_note_metrics(note_by_id[note_id])["engagement"] for note_id in note_ids if note_id in note_by_id)
+        engagement = sum(note_metrics(note_by_id[note_id])["engagement"] for note_id in note_ids if note_id in note_by_id)
         items.append({"keyword": keyword, "notes": len(note_ids), "engagement": engagement})
     return sorted(items, key=lambda item: (item["notes"], item["engagement"], item["keyword"]), reverse=True)
 
@@ -247,7 +204,7 @@ def _benchmark_report_items(db: Session, current_user: User, notes: list[Note]) 
     items: list[dict[str, Any]] = []
     for target in targets:
         matched = _benchmark_matches(notes, target)
-        total_engagement = sum(_note_metrics(note)["engagement"] for note in matched)
+        total_engagement = sum(note_metrics(note)["engagement"] for note in matched)
         items.append(
             {
                 "target_id": target.id,
@@ -277,8 +234,8 @@ def _keyword_trend_items(db: Session, current_user: User, notes: list[Note]) -> 
                 keyword_text = str(keyword).strip()
                 if not keyword_text:
                     continue
-                matched = [note for note in notes if _note_matches_value(note, keyword_text)]
-                engagement = sum(_note_metrics(note)["engagement"] for note in matched)
+                matched = [note for note in notes if note_matches_value(note, keyword_text)]
+                engagement = sum(note_metrics(note)["engagement"] for note in matched)
                 items.append(
                     {
                         "keyword": keyword_text,
@@ -286,7 +243,7 @@ def _keyword_trend_items(db: Session, current_user: User, notes: list[Note]) -> 
                         "group_name": group.name,
                         "notes": len(matched),
                         "engagement": engagement,
-                        "top_notes": [_serialize_top_note(note) for note in sorted(matched, key=lambda note: _note_metrics(note)["engagement"], reverse=True)[:5]],
+                        "top_notes": [_serialize_top_note(note) for note in sorted(matched, key=lambda note: note_metrics(note)["engagement"], reverse=True)[:5]],
                     }
                 )
         return items
@@ -306,9 +263,9 @@ def _keyword_trend_items(db: Session, current_user: User, notes: list[Note]) -> 
 
 def _build_report_payload(db: Session, current_user: User, notes: list[Note], generated_at: datetime) -> dict[str, Any]:
     comments = _comments_for_notes(db, current_user, {note.id for note in notes})
-    top_notes = sorted(notes, key=lambda note: _note_metrics(note)["engagement"], reverse=True)
+    top_notes = sorted(notes, key=lambda note: note_metrics(note)["engagement"], reverse=True)
     topics = _topic_items(db, current_user, notes)
-    total_engagement = sum(_note_metrics(note)["engagement"] for note in notes)
+    total_engagement = sum(note_metrics(note)["engagement"] for note in notes)
     benchmark_items = _benchmark_report_items(db, current_user, notes)
     summary = {
         "note_count": len(notes),
@@ -362,7 +319,7 @@ def overview(
         )
     ).all()
     today = shanghai_now().date()
-    total_engagement = sum(_note_metrics(note)["engagement"] for note in notes)
+    total_engagement = sum(note_metrics(note)["engagement"] for note in notes)
     hot_topics = _topic_items(db, current_user, notes)[:5]
     recent_activity = [
         {"type": "note", "title": note.title or note.note_id, "status": "saved"} for note in notes[:5]
@@ -387,7 +344,7 @@ def top_content(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    notes = sorted(_owned_notes(db, current_user), key=lambda note: _note_metrics(note)["engagement"], reverse=True)
+    notes = sorted(_owned_notes(db, current_user), key=lambda note: note_metrics(note)["engagement"], reverse=True)
     return {"items": [_serialize_top_note(note) for note in notes[:limit]]}
 
 
@@ -406,7 +363,7 @@ def engagement(
 ):
     daily: dict[str, Counter] = defaultdict(Counter)
     for note in _owned_notes(db, current_user):
-        metrics = _note_metrics(note)
+        metrics = note_metrics(note)
         key = note.created_at.date().isoformat()
         daily[key].update(metrics)
     return {
@@ -500,7 +457,7 @@ def benchmarks(
     items: list[dict[str, Any]] = []
     for target in targets:
         matched = _benchmark_matches(notes, target)
-        total_engagement = sum(_note_metrics(note)["engagement"] for note in matched)
+        total_engagement = sum(note_metrics(note)["engagement"] for note in matched)
         items.append(
             {
                 "target_id": target.id,
