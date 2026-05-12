@@ -2,9 +2,11 @@ import {
   ClockCircleOutlined,
   DeleteOutlined,
   DownOutlined,
+  FireOutlined,
   LinkOutlined,
   ReloadOutlined,
   RightOutlined,
+  RiseOutlined,
 } from "@ant-design/icons";
 import {
   Alert,
@@ -335,6 +337,11 @@ export function XhsBenchmarksPage() {
             const isExpanded = expandedTargetId === target.id;
             const isRefreshing = refreshingIds.has(target.id);
             const isLoadingSnapshots = loadingSnapshotIds.has(target.id);
+            const targetConfig = target.config as Record<string, unknown> | undefined;
+            const isBenchmarkSource = Boolean(targetConfig?.benchmark_source);
+            const isViral = Boolean(targetConfig?.viral_potential);
+            const viralVelocity = typeof targetConfig?.viral_velocity === "number" ? targetConfig.viral_velocity : 0;
+            const viralDetectedAt = typeof targetConfig?.viral_detected_at === "string" ? targetConfig.viral_detected_at : null;
 
             return (
               <Col xs={24} lg={12} key={target.id}>
@@ -368,11 +375,15 @@ export function XhsBenchmarksPage() {
                         {target.value}
                       </Text>
                     </div>
-                    <Tag
-                      color={target.status === "active" ? "green" : "default"}
-                    >
-                      {target.status === "active" ? "监控中" : "已暂停"}
-                    </Tag>
+                    <Space size={4}>
+                      {isBenchmarkSource && <Tag color="blue" icon={<RiseOutlined />}>对标</Tag>}
+                      {isViral && <Tag color="red" icon={<FireOutlined />}>潜质</Tag>}
+                      <Tag
+                        color={target.status === "active" ? "green" : "default"}
+                      >
+                        {target.status === "active" ? "监控中" : "已暂停"}
+                      </Tag>
+                    </Space>
                   </div>
 
                   {/* Meta info */}
@@ -433,6 +444,19 @@ export function XhsBenchmarksPage() {
                       </div>
                     </div>
                   </div>
+
+                  {/* Viral info */}
+                  {isViral && viralVelocity > 0 && (
+                    <div style={{ padding: "6px 10px", marginBottom: 12, background: "rgba(239,68,68,0.08)", borderRadius: 6, border: "1px solid rgba(239,68,68,0.2)" }}>
+                      <Space>
+                        <FireOutlined style={{ color: "#ef4444" }} />
+                        <Text style={{ fontSize: 12, color: "#ef4444" }}>
+                          增速 {viralVelocity.toFixed(1)}/时
+                          {viralDetectedAt && ` · 判定于 ${formatShanghaiTime(viralDetectedAt)}`}
+                        </Text>
+                      </Space>
+                    </div>
+                  )}
 
                   {/* Actions */}
                   <Space>

@@ -499,6 +499,10 @@ export type MonitoringTarget = {
   last_refreshed_at?: string | null;
   created_at: string;
   updated_at: string;
+  platform_account_id?: number | null;
+  crawl_interval_minutes?: number;
+  consecutive_failures?: number;
+  last_crawl_error?: string | null;
 };
 
 export type MonitoringTargetPayload = {
@@ -543,6 +547,39 @@ export type MonitoringRefreshResponse = {
   target: MonitoringTarget;
   task: TaskRecord;
   snapshot: MonitoringSnapshot;
+};
+
+export type BenchmarkAccountPopularNote = {
+  note_id: string;
+  note_url: string;
+  title: string;
+  author_name: string;
+  cover_url?: string;
+  likes: number;
+  collects: number;
+  comments: number;
+  shares: number;
+  engagement: number;
+  multiplier?: number | null;
+  timestamp?: number | null;
+};
+
+export type BenchmarkAccountCrawlResult = {
+  target: MonitoringTarget;
+  candidate_count: number;
+  crawled_count: number;
+  failed_count: number;
+  popular_count: number;
+  imported_count: number;
+  baseline_engagement: number;
+  threshold_engagement: number;
+  items: BenchmarkAccountPopularNote[];
+};
+
+export type ScanAndMonitorResult = {
+  target: MonitoringTarget;
+  scanned_links: number;
+  new_monitoring_targets: number;
 };
 
 export type KeywordGroup = {

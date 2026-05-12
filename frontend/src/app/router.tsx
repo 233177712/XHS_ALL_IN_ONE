@@ -11,6 +11,7 @@ import { TaskCenterPage } from "../pages/tasks/task-center-page";
 import { AutoOpsPage } from "../pages/platforms/xhs/auto-ops-page";
 import { XhsAccountsPage } from "../pages/platforms/xhs/accounts-page";
 import { XhsAnalyticsPage } from "../pages/platforms/xhs/analytics-page";
+import { BenchmarkAccountsPage } from "../pages/platforms/xhs/benchmark-accounts-page";
 import { XhsBenchmarksPage } from "../pages/platforms/xhs/benchmarks-page";
 import { XhsDashboard } from "../pages/platforms/xhs/xhs-dashboard";
 import { XhsCrawlerPage } from "../pages/platforms/xhs/crawler-page";
@@ -69,6 +70,7 @@ export function AppRouter() {
           <Route path="/platforms/xhs/library" element={<XhsLibraryPage />} />
           <Route path="/platforms/xhs/drafts" element={<XhsDraftsPage />} />
           <Route path="/platforms/xhs/benchmarks" element={<XhsBenchmarksPage />} />
+          <Route path="/platforms/xhs/benchmark-accounts" element={<BenchmarkAccountsPage />} />
           <Route path="/platforms/xhs/image-studio" element={<XhsImageStudioPage />} />
           <Route path="/platforms/xhs/video-studio" element={<XhsVideoStudioPage />} />
           <Route path="/platforms/xhs/publish" element={<XhsPublishPage />} />

@@ -1,0 +1,1 @@
+export const MAX_XHS_CRAWL_INTERVAL_SECONDS = 200;

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import urllib.parse
 from typing import Any
 
 from backend.app.adapters.xhs.request_env import direct_xhs_request_env
@@ -8,6 +9,15 @@ from backend.app.adapters.xhs.request_env import direct_xhs_request_env
 class XhsPcApiAdapter:
     def __init__(self, cookies: str) -> None:
         self.cookies = cookies
+
+    @staticmethod
+    def _parse_user_url(user_url: str) -> tuple[str, str, str]:
+        url_parse = urllib.parse.urlparse(user_url)
+        user_id = url_parse.path.rstrip("/").split("/")[-1]
+        query = urllib.parse.parse_qs(url_parse.query)
+        xsec_token = query.get("xsec_token", [""])[0]
+        xsec_source = query.get("xsec_source", ["pc_search"])[0] or "pc_search"
+        return user_id, xsec_token, xsec_source
 
     def search_note(
         self,
@@ -56,6 +66,29 @@ class XhsPcApiAdapter:
 
             api = XHS_Apis()
             return api.get_user_all_notes(user_url=user_url, cookies_str=self.cookies)
+
+    def get_user_notes_page(self, user_url: str, cursor: str = "") -> Any:
+        with direct_xhs_request_env():
+            from apis.xhs_pc_apis import XHS_Apis
+
+            user_id, xsec_token, xsec_source = self._parse_user_url(user_url)
+
+            api = XHS_Apis()
+            return api.get_user_note_info(
+                user_id=user_id,
+                cursor=cursor,
+                cookies_str=self.cookies,
+                xsec_token=xsec_token,
+                xsec_source=xsec_source,
+            )
+
+    def get_user_profile(self, user_url: str) -> Any:
+        with direct_xhs_request_env():
+            from apis.xhs_pc_apis import XHS_Apis
+
+            user_id, _, _ = self._parse_user_url(user_url)
+            api = XHS_Apis()
+            return api.get_user_info(user_id=user_id, cookies_str=self.cookies)
 
     def get_self_info(self) -> Any:
         with direct_xhs_request_env():

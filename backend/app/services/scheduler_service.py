@@ -632,6 +632,120 @@ def run_due_auto_tasks() -> None:
         db.close()
 
 
+def run_due_benchmark_scans() -> None:
+    from backend.app.adapters.xhs.pc_api_adapter import XhsPcApiAdapter
+    from backend.app.api.platforms.xhs.crawl import crawl_user_note_links
+    db = SessionLocal()
+    try:
+        now = shanghai_now()
+        targets = db.scalars(
+            select(MonitoringTarget).where(
+                MonitoringTarget.platform == "xhs",
+                MonitoringTarget.target_type == "account",
+                MonitoringTarget.status == "active",
+            )
+        ).all()
+        for target in targets:
+            config = target.config or {}
+            if not config.get("scan_enabled"):
+                continue
+            scan_interval_hours = int(config.get("scan_interval_hours", 6))
+            scan_last_run_at = config.get("scan_last_run_at")
+            if scan_last_run_at:
+                try:
+                    from datetime import timedelta
+                    last_run = datetime.fromisoformat(scan_last_run_at)
+                    if now - last_run < timedelta(hours=scan_interval_hours):
+                        continue
+                except (TypeError, ValueError):
+                    pass
+
+            recent_hours = int(config.get("scan_recent_hours", 168))
+            crawl_interval = int(config.get("scan_crawl_interval_minutes", 60))
+            account_id = int(config.get("scan_account_id", target.platform_account_id or 0))
+            if not account_id:
+                continue
+            account = db.get(PlatformAccount, account_id)
+            if not account or account.user_id != target.user_id or account.status != "active":
+                continue
+            cookie_version = db.scalars(
+                select(AccountCookieVersion)
+                .where(AccountCookieVersion.platform_account_id == account.id)
+                .order_by(AccountCookieVersion.created_at.desc())
+            ).first()
+            if not cookie_version:
+                continue
+            from backend.app.core.security import decrypt_text
+            raw = decrypt_text(cookie_version.encrypted_cookies)
+            try:
+                import json as _json
+                parsed = _json.loads(raw)
+                if isinstance(parsed, dict):
+                    cookies = "; ".join(f"{k}={v}" for k, v in parsed.items())
+                else:
+                    cookies = raw
+            except Exception:
+                cookies = raw
+            try:
+                adapter = XhsPcApiAdapter(cookies)
+                note_links = crawl_user_note_links(
+                    adapter, target.value,
+                    recent_months=max(1, recent_hours // 720),
+                    max_notes=recent_hours,
+                    time_sleep=1,
+                )
+            except Exception:
+                note_links = []
+
+            existing_vals = set()
+            existing_rows = db.scalars(
+                select(MonitoringTarget.value).where(
+                    MonitoringTarget.user_id == target.user_id,
+                    MonitoringTarget.platform == "xhs",
+                    MonitoringTarget.target_type == "note_url",
+                )
+            ).all()
+            for row in existing_rows:
+                v = str(row).strip().rstrip("/")
+                if v:
+                    existing_vals.add(v)
+
+            new_targets: list[MonitoringTarget] = []
+            for link in note_links:
+                note_url = str(link.get("note_url") or "").strip().rstrip("/")
+                note_id = str(link.get("note_id") or "").strip()
+                if not note_url or not note_id or note_url in existing_vals:
+                    continue
+                existing_vals.add(note_url)
+                mt = MonitoringTarget(
+                    user_id=target.user_id,
+                    platform="xhs",
+                    target_type="note_url",
+                    name=note_id,
+                    value=note_url,
+                    status="active",
+                    crawl_interval_minutes=crawl_interval,
+                    config={"benchmark_source": True, "viral_threshold": 10},
+                )
+                db.add(mt)
+                new_targets.append(mt)
+
+            if new_targets:
+                db.commit()
+
+            config["scan_last_run_at"] = now.isoformat()
+            from datetime import timedelta as _tdelta
+            config["scan_next_run_at"] = (now + _tdelta(hours=scan_interval_hours)).isoformat()
+            target.config = config
+            target.updated_at = now
+            db.commit()
+            logger.info(f"Benchmark scan for target {target.id}: {len(note_links)} links, {len(new_targets)} new monitoring targets")
+    except Exception as exc:
+        logger.error(f"run_due_benchmark_scans failed: {exc}")
+    finally:
+        db.close()
+
+
 def _check_single_account(db: Session, account: PlatformAccount, now: datetime) -> str:
     """Check one account's cookie validity. Returns the new status."""
     from backend.app.adapters.xhs.pc_login_adapter import XhsPcLoginAdapter
@@ -730,6 +844,15 @@ def build_due_publish_scheduler(interval_seconds: int, job_func, monitoring_job_
         "interval",
         hours=2,
         id="cookie_health_checker",
+        replace_existing=True,
+        max_instances=1,
+        coalesce=True,
+    )
+    scheduler.add_job(
+        run_due_benchmark_scans,
+        "interval",
+        minutes=30,
+        id="benchmark_scan_runner",
         replace_existing=True,
         max_instances=1,
         coalesce=True,

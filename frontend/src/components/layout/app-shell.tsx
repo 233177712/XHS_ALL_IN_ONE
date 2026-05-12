@@ -1,5 +1,6 @@
 import {
   AimOutlined,
+  AuditOutlined,
   BarChartOutlined,
   BellOutlined,
   CloudDownloadOutlined,
@@ -59,6 +60,7 @@ const mainNavItems: MenuProps["items"] = [
   { key: "/platforms/xhs/keywords", icon: <KeyOutlined />, label: "关键词组" },
   { key: "/platforms/xhs/analytics", icon: <BarChartOutlined />, label: "数据洞察" },
   { key: "/platforms/xhs/benchmarks", icon: <AimOutlined />, label: "竞品监控" },
+  { key: "/platforms/xhs/benchmark-accounts", icon: <AuditOutlined />, label: "对标账号池" },
   { key: "/platforms/xhs/image-studio", icon: <StarOutlined />, label: "图片工坊" },
   { key: "/platforms/xhs/video-studio", icon: <VideoCameraOutlined />, label: "视频工坊" },
   { key: "/platforms/xhs/library", icon: <DatabaseOutlined />, label: "内容库" },

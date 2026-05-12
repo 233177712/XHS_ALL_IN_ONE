@@ -134,6 +134,36 @@ def _make_snapshot(db: Session, target: MonitoringTarget, user: User) -> Monitor
     return snapshot
 
 
+def _check_viral_potential(db: Session, target: MonitoringTarget) -> dict[str, Any]:
+    from datetime import timezone
+    config = target.config or {}
+    threshold = float(config.get("viral_threshold", 10))
+    snapshots = db.scalars(
+        select(MonitoringSnapshot)
+        .where(MonitoringSnapshot.target_id == target.id)
+        .order_by(MonitoringSnapshot.created_at.desc(), MonitoringSnapshot.id.desc())
+        .limit(2)
+    ).all()
+    if len(snapshots) < 2:
+        return {"is_viral": False, "velocity": 0, "reason": "insufficient_data"}
+    latest = snapshots[0]
+    previous = snapshots[1]
+    latest_engagement = int((latest.payload or {}).get("total_engagement", 0) or 0)
+    previous_engagement = int((previous.payload or {}).get("total_engagement", 0) or 0)
+    delta_engagement = latest_engagement - previous_engagement
+    if delta_engagement <= 0:
+        return {"is_viral": False, "velocity": 0, "reason": "no_growth"}
+    lt = latest.created_at.replace(tzinfo=None) if latest.created_at.tzinfo else latest.created_at
+    pt = previous.created_at.replace(tzinfo=None) if previous.created_at.tzinfo else previous.created_at
+    hours_elapsed = (lt - pt).total_seconds() / 3600
+    if hours_elapsed <= 0:
+        return {"is_viral": False, "velocity": 0, "reason": "no_time_elapsed"}
+    velocity = delta_engagement / hours_elapsed
+    if velocity >= threshold:
+        return {"is_viral": True, "velocity": velocity, "reason": "viral_potential_detected"}
+    return {"is_viral": False, "velocity": velocity, "reason": "below_threshold"}
+
+
 def execute_monitoring_refresh(
     db: Session,
     target: MonitoringTarget,
@@ -211,10 +241,33 @@ def execute_monitoring_refresh(
 
     ok, normalized_items, error_msg = _crawl_for_target(adapter, target)
 
-    if ok and normalized_items:
-        _save_normalized_notes(db, account, normalized_items)
+    target_config = target.config or {}
+
+    if target.target_type == "note_url" and target_config.get("benchmark_source"):
+        if ok and normalized_items:
+            pass
+        elif ok and normalized_items:
+            _save_normalized_notes(db, account, normalized_items)
+    else:
+        if ok and normalized_items:
+            _save_normalized_notes(db, account, normalized_items)
 
     snapshot = _make_snapshot(db, target, user)
+
+    viral_hit = False
+    viral_velocity = 0
+    if target.target_type == "note_url" and target_config.get("benchmark_source"):
+        viral_result = _check_viral_potential(db, target)
+        viral_velocity = viral_result["velocity"]
+        if viral_result["is_viral"] and ok and normalized_items:
+            _save_normalized_notes(db, account, normalized_items)
+            viral_hit = True
+            target.config = {
+                **(target_config),
+                "viral_potential": True,
+                "viral_detected_at": shanghai_now().isoformat(),
+                "viral_velocity": round(viral_velocity, 2),
+            }
 
     if ok:
         parent_task.status = "completed"
@@ -224,6 +277,8 @@ def execute_monitoring_refresh(
             "crawled_count": len(normalized_items),
             "snapshot_id": snapshot.id,
             "matched_count": (snapshot.payload or {}).get("matched_count", 0),
+            "viral_potential": viral_hit,
+            "viral_velocity": round(viral_velocity, 2) if viral_velocity else None,
         }
         target.consecutive_failures = 0
         target.last_crawl_error = None

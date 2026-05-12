@@ -14,7 +14,9 @@ import type {
   AnalyticsReportResponse,
   AnalyticsTopContent,
   AppNotification,
+  BenchmarkAccountCrawlResult,
   BenchmarkCreateDraftsResponse,
+  ScanAndMonitorResult,
   BenchmarkOverview,
   BatchCreateDraftsPayload,
   BatchCreateDraftsResponse,
@@ -680,6 +682,82 @@ export async function fetchMonitoringSnapshots(targetId: number): Promise<{ targ
 export async function fetchMonitoringTargetNotes(targetId: number): Promise<{ target_id: number; items: MonitoringNote[] }> {
   const response = await http.get<{ target_id: number; items: MonitoringNote[] }>(
     `/xhs/monitoring/targets/${targetId}/notes`
+  );
+  return response.data;
+}
+
+export async function fetchBenchmarkAccounts(): Promise<Paginated<MonitoringTarget>> {
+  const response = await http.get<Paginated<MonitoringTarget>>("/xhs/benchmark-accounts");
+  return response.data;
+}
+
+export async function createBenchmarkAccount(url: string): Promise<MonitoringTarget> {
+  const response = await http.post<MonitoringTarget>("/xhs/benchmark-accounts", { url });
+  return response.data;
+}
+
+export async function deleteBenchmarkAccount(targetId: number): Promise<{ id: number; status: string }> {
+  const response = await http.delete<{ id: number; status: string }>(`/xhs/benchmark-accounts/${targetId}`);
+  return response.data;
+}
+
+export async function crawlBenchmarkAccountPopularNotes(payload: {
+  target_id: number;
+  account_id: number;
+  recent_months: number;
+  max_notes: number;
+  request_interval_seconds: number;
+}): Promise<BenchmarkAccountCrawlResult> {
+  const response = await http.post<BenchmarkAccountCrawlResult>(
+    `/xhs/benchmark-accounts/${payload.target_id}/crawl-popular`,
+    {
+      account_id: payload.account_id,
+      recent_months: payload.recent_months,
+      max_notes: payload.max_notes,
+      request_interval_seconds: payload.request_interval_seconds,
+    },
+    { timeout: 300000 },
+  );
+  return response.data;
+}
+
+export async function scanAndMonitorBenchmarkAccount(payload: {
+  target_id: number;
+  account_id: number;
+  recent_hours: number;
+  crawl_interval_minutes: number;
+  request_interval_seconds: number;
+}): Promise<ScanAndMonitorResult> {
+  const response = await http.post<ScanAndMonitorResult>(
+    `/xhs/benchmark-accounts/${payload.target_id}/scan-and-monitor`,
+    {
+      account_id: payload.account_id,
+      recent_hours: payload.recent_hours,
+      crawl_interval_minutes: payload.crawl_interval_minutes,
+      request_interval_seconds: payload.request_interval_seconds,
+    },
+    { timeout: 300000 },
+  );
+  return response.data;
+}
+
+export async function configureBenchmarkAutoScan(payload: {
+  target_id: number;
+  enabled: boolean;
+  scan_interval_hours: number;
+  recent_hours: number;
+  crawl_interval_minutes: number;
+  account_id: number;
+}): Promise<MonitoringTarget> {
+  const response = await http.post<MonitoringTarget>(
+    `/xhs/benchmark-accounts/${payload.target_id}/auto-scan-config`,
+    {
+      enabled: payload.enabled,
+      scan_interval_hours: payload.scan_interval_hours,
+      recent_hours: payload.recent_hours,
+      crawl_interval_minutes: payload.crawl_interval_minutes,
+      account_id: payload.account_id,
+    },
   );
   return response.data;
 }

@@ -15,6 +15,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { crawlXhsDataStream, fetchAccounts } from "../../../lib/api";
+import { MAX_XHS_CRAWL_INTERVAL_SECONDS } from "../../../lib/xhs-crawl";
 import type { PlatformAccount, XhsDataCrawlItem, XhsDataCrawlMode } from "../../../types";
 
 const { Title, Text } = Typography;
@@ -268,7 +269,7 @@ export function XhsCrawlerPage() {
             </Col>
             <Col span={4}>
               <Form.Item label="Time Sleep">
-                <InputNumber min={0} max={200} step={0.5} value={timeSleep} onChange={(v) => setTimeSleep(v ?? 120)} style={{ width: "100%" }} />
+                <InputNumber min={0} max={MAX_XHS_CRAWL_INTERVAL_SECONDS} step={0.5} value={timeSleep} onChange={(v) => setTimeSleep(v ?? 120)} style={{ width: "100%" }} />
               </Form.Item>
             </Col>
             <Col span={4} style={{ display: "flex", alignItems: "center", paddingTop: 8 }}>
