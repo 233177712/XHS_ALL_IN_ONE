@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime
 import json
 import time
 from statistics import median
@@ -24,7 +25,7 @@ from backend.app.api.platforms.xhs.crawl import (
 from backend.app.api.platforms.xhs.monitoring import _serialize_target
 from backend.app.core.database import get_db
 from backend.app.core.deps import get_current_user
-from backend.app.core.time import shanghai_now
+from backend.app.core.time import SHANGHAI_TZ, shanghai_now
 from backend.app.models import MonitoringTarget, PlatformAccount, User
 from backend.app.schemas.common import paginated
 from backend.app.services.monitoring_crawl_service import _decrypt_cookies
@@ -243,30 +244,47 @@ def _note_engagement(note: dict[str, Any]) -> int:
     return int(note.get("likes") or 0) + int(note.get("collects") or 0) + int(note.get("comments") or 0) + int(note.get("shares") or 0)
 
 
+def _note_publish_days(note: dict[str, Any], now_s: int | None = None) -> float:
+    ts = _coerce_timestamp_seconds(note.get("timestamp"))
+    if ts is None or ts <= 0:
+        return 1.0
+    if now_s is None:
+        now_s = int(datetime.now(SHANGHAI_TZ).timestamp())
+    return max((now_s - ts) / 86400, 1)
+
+
+def _note_daily_rate(note: dict[str, Any], now_s: int | None = None) -> float:
+    return _note_engagement(note) / _note_publish_days(note, now_s=now_s)
+
+
 def _pick_popular_notes(notes: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], float, float]:
     if not notes:
         return [], 0, 0
 
-    ranked = sorted(notes, key=_note_engagement, reverse=True)
-    engagements = [_note_engagement(note) for note in ranked]
-    median_value = float(median(engagements)) if engagements else 0
-    threshold = median_value * 2 if median_value > 0 else max(float(engagements[0]) if engagements else 0, 0)
+    now_s = int(datetime.now(SHANGHAI_TZ).timestamp())
+    with_rate = [(note, _note_daily_rate(note, now_s=now_s)) for note in notes]
+    ranked = sorted(with_rate, key=lambda pair: pair[1], reverse=True)
+    rates = [pair[1] for pair in ranked]
+    median_rate = float(median(rates)) if rates else 0
+    threshold_rate = median_rate * 2 if median_rate > 0 else max(rates[0] if rates else 0, 0)
     top_count = max(1, (len(ranked) + 4) // 5)
 
-    popular = [
-        note
-        for index, note in enumerate(ranked)
-        if index < top_count and _note_engagement(note) > 0 and _note_engagement(note) >= threshold
+    popular_pairs = [
+        pair
+        for index, pair in enumerate(ranked)
+        if index < top_count and _note_engagement(pair[0]) > 0 and pair[1] >= threshold_rate
     ]
-    if not popular and ranked and median_value > 0 and _note_engagement(ranked[0]) >= median_value * 1.5:
-        popular = [ranked[0]]
-    return popular, median_value, threshold
+    if not popular_pairs and ranked and median_rate > 0 and ranked[0][1] >= median_rate * 1.5:
+        popular_pairs = [ranked[0]]
+
+    return [pair[0] for pair in popular_pairs], median_rate, threshold_rate
 
 
-def _serialize_popular_note(note: dict[str, Any], baseline: float) -> dict[str, Any]:
+def _serialize_popular_note(note: dict[str, Any], baseline_daily_rate: float) -> dict[str, Any]:
     engagement = _note_engagement(note)
     timestamp = _coerce_timestamp_seconds(note.get("timestamp"))
-    multiplier = round(engagement / baseline, 2) if baseline > 0 else None
+    rate = _note_daily_rate(note)
+    multiplier = round(rate / baseline_daily_rate, 2) if baseline_daily_rate > 0 else None
     return {
         "note_id": str(note.get("note_id") or ""),
         "note_url": str(note.get("note_url") or ""),
@@ -407,7 +425,7 @@ def crawl_popular_notes(
                 adapter, target.value,
                 recent_months=payload.recent_months,
                 max_notes=payload.max_notes,
-                time_sleep=payload.request_interval_seconds,
+                time_sleep=1,
             )
         except Exception as exc:
             yield _sse_event({"type": "error", "message": f"笔记列表抓取失败: {exc}"})
