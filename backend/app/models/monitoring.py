@@ -17,7 +17,7 @@ class MonitoringTarget(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
     platform: Mapped[str] = mapped_column(String(32), index=True, default="xhs")
     target_type: Mapped[str] = mapped_column(String(32), index=True)
-    name: Mapped[str] = mapped_column(String(128), default="")
+    name: Mapped[str] = mapped_column(String(512), default="")
     value: Mapped[str] = mapped_column(String(512))
     status: Mapped[str] = mapped_column(String(32), default="active")
     config: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)

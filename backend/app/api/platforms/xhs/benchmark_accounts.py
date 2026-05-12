@@ -23,9 +23,9 @@ from backend.app.core.deps import get_current_user
 from backend.app.core.time import shanghai_now
 from backend.app.models import MonitoringTarget, PlatformAccount, User
 from backend.app.schemas.common import paginated
-from backend.app.services.monitoring_crawl_service import _decrypt_cookies, execute_monitoring_refresh
+from backend.app.services.monitoring_crawl_service import _decrypt_cookies
 from backend.app.adapters.xhs.pc_api_adapter import XhsPcApiAdapter
-from backend.app.api.platforms.xhs.pc import get_xhs_pc_api_adapter_factory
+
 
 router = APIRouter(prefix="/xhs/benchmark-accounts", tags=["xhs-benchmark-accounts"])
 
@@ -305,7 +305,27 @@ def list_benchmark_accounts(
         db.commit()
         for target in rows:
             db.refresh(target)
-    return paginated([_serialize_target(target) for target in rows], page, page_size)
+
+    monitored_counts: dict[int, int] = {}
+    all_note_urls = db.scalars(
+        select(MonitoringTarget).where(
+            MonitoringTarget.user_id == current_user.id,
+            MonitoringTarget.platform == "xhs",
+            MonitoringTarget.target_type == "note_url",
+        )
+    ).all()
+    for note_url_target in all_note_urls:
+        cfg = note_url_target.config or {}
+        source_id = cfg.get("source_benchmark_id")
+        if isinstance(source_id, int) and source_id > 0:
+            monitored_counts[source_id] = monitored_counts.get(source_id, 0) + 1
+
+    result = paginated([_serialize_target(target) for target in rows], page, page_size)
+    for item in result["items"]:
+        tid = item.get("id")
+        if isinstance(tid, int):
+            item["monitored_note_count"] = monitored_counts.get(tid, 0)
+    return result
 
 
 @router.post("")
@@ -452,6 +472,8 @@ def _create_monitoring_target_for_note(
     note_url: str,
     note_id: str,
     crawl_interval_minutes: int,
+    *,
+    source_benchmark_id: int | None = None,
 ) -> MonitoringTarget:
     target = MonitoringTarget(
         user_id=user.id,
@@ -461,9 +483,11 @@ def _create_monitoring_target_for_note(
         value=note_url,
         status="active",
         crawl_interval_minutes=crawl_interval_minutes,
+        platform_account_id=account.id,
         config={
             "benchmark_source": True,
             "viral_threshold": 10,
+            **({"source_benchmark_id": source_benchmark_id} if source_benchmark_id is not None else {}),
         },
     )
     db.add(target)
@@ -477,7 +501,6 @@ def scan_and_monitor(
     payload: ScanAndMonitorRequest,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
-    adapter_factory=Depends(get_xhs_pc_api_adapter_factory),
 ):
     target = _get_owned_benchmark_target(db, current_user, target_id)
     account = _get_owned_pc_account(db, current_user, payload.account_id)
@@ -490,11 +513,11 @@ def scan_and_monitor(
         note_links = crawl_user_note_links(
             adapter,
             target.value,
-            recent_months=max(1, payload.recent_hours // 720),
+            recent_hours=payload.recent_hours,
             max_notes=payload.recent_hours,
             time_sleep=payload.request_interval_seconds,
         )
-    except RuntimeError:
+    except Exception:
         note_links = []
 
     existing = _existing_monitoring_urls(db, current_user)
@@ -507,24 +530,14 @@ def scan_and_monitor(
         if note_url in existing:
             continue
         existing.add(note_url)
-        monitoring_target = _create_monitoring_target_for_note(
+        _create_monitoring_target_for_note(
             db, current_user, account, note_url, note_id, payload.crawl_interval_minutes,
+            source_benchmark_id=target.id,
         )
-        new_targets.append(monitoring_target)
+        new_targets.append(True)
 
     if new_targets:
         db.commit()
-
-    refresh_results: list[dict[str, Any]] = []
-    for monitoring_target in new_targets:
-        try:
-            result = execute_monitoring_refresh(
-                db, monitoring_target, current_user,
-                adapter_factory=adapter_factory, check_rate_limit=False,
-            )
-            refresh_results.append(result)
-        except Exception:
-            pass
 
     target.config = {
         **(target.config or {}),

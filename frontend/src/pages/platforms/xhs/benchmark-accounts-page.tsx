@@ -493,19 +493,28 @@ export function BenchmarkAccountsPage() {
                       <Alert type="warning" showIcon message={target.last_crawl_error} />
                     )}
 
-                    {scanEnabled && (
+                    {(scanEnabled || (target.monitored_note_count ?? 0) > 0) && (
                       <div style={{ padding: "6px 10px", background: "#141414", borderRadius: 6 }}>
                         <Space wrap size={12}>
-                          <Text type="secondary" style={{ fontSize: 12 }}>
-                            上次扫描：{lastScanAt ? formatShanghaiTime(lastScanAt) : "-"}
-                          </Text>
-                          <Text type="secondary" style={{ fontSize: 12 }}>
-                            下次扫描：{scanNextRun ? formatShanghaiTime(scanNextRun) : "-"}
-                          </Text>
-                          {scanLastNew > 0 && (
+                          {(target.monitored_note_count ?? 0) > 0 && (
                             <Text type="secondary" style={{ fontSize: 12 }}>
-                              上次新增监控：{scanLastNew} 篇
+                              监控中：{target.monitored_note_count} 篇
                             </Text>
+                          )}
+                          {scanEnabled && (
+                            <>
+                              <Text type="secondary" style={{ fontSize: 12 }}>
+                                上次扫描：{lastScanAt ? formatShanghaiTime(lastScanAt) : "-"}
+                              </Text>
+                              <Text type="secondary" style={{ fontSize: 12 }}>
+                                下次扫描：{scanNextRun ? formatShanghaiTime(scanNextRun) : "-"}
+                              </Text>
+                              {scanLastNew > 0 && (
+                                <Text type="secondary" style={{ fontSize: 12 }}>
+                                  上次新增：{scanLastNew} 篇
+                                </Text>
+                              )}
+                            </>
                           )}
                         </Space>
                       </div>

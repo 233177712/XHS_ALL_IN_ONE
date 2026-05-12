@@ -503,6 +503,7 @@ export type MonitoringTarget = {
   crawl_interval_minutes?: number;
   consecutive_failures?: number;
   last_crawl_error?: string | null;
+  monitored_note_count?: number;
 };
 
 export type MonitoringTargetPayload = {
@@ -511,6 +512,7 @@ export type MonitoringTargetPayload = {
   value: string;
   status?: "active" | "paused";
   config?: Record<string, unknown>;
+  platform_account_id?: number | null;
 };
 
 export type MonitoringSnapshot = {

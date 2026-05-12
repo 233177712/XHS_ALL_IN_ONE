@@ -96,7 +96,7 @@ def _crawl_for_target(
             success, message, raw = adapter.get_note_info(target.value)
             if not success:
                 return False, [], message or "note detail failed"
-            items = [_normalize_detail_payload(raw or {})]
+            items = [_normalize_detail_payload(raw or {}, source_url=target.value)]
             return True, items, ""
         else:
             return False, [], f"unsupported target_type: {target.target_type}"
@@ -132,6 +132,35 @@ def _make_snapshot(db: Session, target: MonitoringTarget, user: User) -> Monitor
     db.add(snapshot)
     db.flush()
     return snapshot
+
+
+def _snapshot_from_note_url(normalized_items: list[dict[str, Any]]) -> dict[str, Any]:
+    if not normalized_items:
+        return {"matched_count": 0, "total_engagement": 0, "likes": 0, "collects": 0, "comments": 0, "shares": 0, "top_notes": []}
+    note = normalized_items[0]
+    likes = int(note.get("likes") or 0)
+    collects = int(note.get("collects") or 0)
+    comments = int(note.get("comments") or 0)
+    shares = int(note.get("shares") or 0)
+    engagement = likes + collects + comments + shares
+    return {
+        "matched_count": 1,
+        "total_engagement": engagement,
+        "likes": likes,
+        "collects": collects,
+        "comments": comments,
+        "shares": shares,
+        "top_notes": [{
+            "note_id": str(note.get("note_id") or ""),
+            "title": str(note.get("title") or ""),
+            "author_name": str(note.get("author_name") or ""),
+            "likes": likes,
+            "collects": collects,
+            "comments": comments,
+            "shares": shares,
+            "engagement": engagement,
+        }],
+    }
 
 
 def _check_viral_potential(db: Session, target: MonitoringTarget) -> dict[str, Any]:
@@ -242,21 +271,24 @@ def execute_monitoring_refresh(
     ok, normalized_items, error_msg = _crawl_for_target(adapter, target)
 
     target_config = target.config or {}
+    is_note_url = target.target_type == "note_url"
+    is_benchmark = is_note_url and target_config.get("benchmark_source")
 
-    if target.target_type == "note_url" and target_config.get("benchmark_source"):
-        if ok and normalized_items:
-            pass
-        elif ok and normalized_items:
+    if ok and normalized_items:
+        if not is_benchmark:
             _save_normalized_notes(db, account, normalized_items)
+
+    if is_note_url and ok and normalized_items:
+        snapshot_payload = _snapshot_from_note_url(normalized_items)
+        snapshot = MonitoringSnapshot(target_id=target.id, payload=snapshot_payload)
+        db.add(snapshot)
+        db.flush()
     else:
-        if ok and normalized_items:
-            _save_normalized_notes(db, account, normalized_items)
-
-    snapshot = _make_snapshot(db, target, user)
+        snapshot = _make_snapshot(db, target, user)
 
     viral_hit = False
     viral_velocity = 0
-    if target.target_type == "note_url" and target_config.get("benchmark_source"):
+    if is_benchmark:
         viral_result = _check_viral_potential(db, target)
         viral_velocity = viral_result["velocity"]
         if viral_result["is_viral"] and ok and normalized_items:

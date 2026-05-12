@@ -635,6 +635,7 @@ def run_due_auto_tasks() -> None:
 def run_due_benchmark_scans() -> None:
     from backend.app.adapters.xhs.pc_api_adapter import XhsPcApiAdapter
     from backend.app.api.platforms.xhs.crawl import crawl_user_note_links
+    from backend.app.services.monitoring_crawl_service import _decrypt_cookies as _scheduler_decrypt
     db = SessionLocal()
     try:
         now = shanghai_now()
@@ -668,29 +669,14 @@ def run_due_benchmark_scans() -> None:
             account = db.get(PlatformAccount, account_id)
             if not account or account.user_id != target.user_id or account.status != "active":
                 continue
-            cookie_version = db.scalars(
-                select(AccountCookieVersion)
-                .where(AccountCookieVersion.platform_account_id == account.id)
-                .order_by(AccountCookieVersion.created_at.desc())
-            ).first()
-            if not cookie_version:
+            cookies = _scheduler_decrypt(db, account)
+            if not cookies:
                 continue
-            from backend.app.core.security import decrypt_text
-            raw = decrypt_text(cookie_version.encrypted_cookies)
-            try:
-                import json as _json
-                parsed = _json.loads(raw)
-                if isinstance(parsed, dict):
-                    cookies = "; ".join(f"{k}={v}" for k, v in parsed.items())
-                else:
-                    cookies = raw
-            except Exception:
-                cookies = raw
             try:
                 adapter = XhsPcApiAdapter(cookies)
                 note_links = crawl_user_note_links(
                     adapter, target.value,
-                    recent_months=max(1, recent_hours // 720),
+                    recent_hours=recent_hours,
                     max_notes=recent_hours,
                     time_sleep=1,
                 )
@@ -710,7 +696,7 @@ def run_due_benchmark_scans() -> None:
                 if v:
                     existing_vals.add(v)
 
-            new_targets: list[MonitoringTarget] = []
+            new_count = 0
             for link in note_links:
                 note_url = str(link.get("note_url") or "").strip().rstrip("/")
                 note_id = str(link.get("note_id") or "").strip()
@@ -725,12 +711,13 @@ def run_due_benchmark_scans() -> None:
                     value=note_url,
                     status="active",
                     crawl_interval_minutes=crawl_interval,
-                    config={"benchmark_source": True, "viral_threshold": 10},
+                    platform_account_id=account_id,
+                    config={"benchmark_source": True, "viral_threshold": 10, "source_benchmark_id": target.id},
                 )
                 db.add(mt)
-                new_targets.append(mt)
+                new_count += 1
 
-            if new_targets:
+            if new_count:
                 db.commit()
 
             config["scan_last_run_at"] = now.isoformat()
@@ -739,7 +726,7 @@ def run_due_benchmark_scans() -> None:
             target.config = config
             target.updated_at = now
             db.commit()
-            logger.info(f"Benchmark scan for target {target.id}: {len(note_links)} links, {len(new_targets)} new monitoring targets")
+            logger.info(f"Benchmark scan for target {target.id}: {len(note_links)} links, {new_count} new monitoring targets")
     except Exception as exc:
         logger.error(f"run_due_benchmark_scans failed: {exc}")
     finally:

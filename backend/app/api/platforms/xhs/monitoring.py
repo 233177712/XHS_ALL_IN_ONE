@@ -23,14 +23,15 @@ router = APIRouter(prefix="/xhs/monitoring", tags=["xhs-monitoring"])
 
 class MonitoringTargetCreateRequest(BaseModel):
     target_type: Literal["keyword", "account", "brand", "note_url"]
-    name: str = Field(default="", max_length=128)
+    name: str = Field(default="", max_length=512)
     value: str = Field(min_length=1, max_length=512)
     status: Literal["active", "paused"] = "active"
     config: dict[str, Any] = Field(default_factory=dict)
+    platform_account_id: Optional[int] = None
 
 
 class MonitoringTargetUpdateRequest(BaseModel):
-    name: Optional[str] = Field(default=None, max_length=128)
+    name: Optional[str] = Field(default=None, max_length=512)
     value: Optional[str] = Field(default=None, min_length=1, max_length=512)
     status: Optional[Literal["active", "paused"]] = None
     config: Optional[dict[str, Any]] = None
@@ -165,6 +166,12 @@ def create_target(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    platform_account_id: int | None = None
+    if payload.platform_account_id is not None:
+        account = db.get(PlatformAccount, payload.platform_account_id)
+        if account is not None and account.user_id == current_user.id and account.platform == "xhs" and account.sub_type == "pc":
+            platform_account_id = account.id
+
     target = MonitoringTarget(
         user_id=current_user.id,
         platform="xhs",
@@ -173,6 +180,7 @@ def create_target(
         value=payload.value,
         status=payload.status,
         config=payload.config,
+        platform_account_id=platform_account_id,
     )
     db.add(target)
     db.commit()

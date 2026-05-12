@@ -277,11 +277,15 @@ def crawl_user_note_links(
     adapter: XhsPcApiAdapter,
     user_url: str,
     *,
-    recent_months: int,
+    recent_hours: int | None = None,
+    recent_months: int = 1,
     max_notes: int,
     time_sleep: float = 0,
 ) -> list[dict[str, Any]]:
-    cutoff_seconds = _recent_months_cutoff_seconds(recent_months)
+    if recent_hours is not None:
+        cutoff_seconds = int((datetime.now(SHANGHAI_TZ).timestamp()) - recent_hours * 3600)
+    else:
+        cutoff_seconds = _recent_months_cutoff_seconds(recent_months)
     cursor = ""
     seen_urls: set[str] = set()
     items: list[dict[str, Any]] = []

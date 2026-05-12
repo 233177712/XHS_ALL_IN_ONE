@@ -18,10 +18,12 @@ import {
   InputNumber,
   Popconfirm,
   Row,
+  Select,
   Space,
   Spin,
   Table,
   Tag,
+  Tooltip,
   Typography,
 } from "antd";
 import { useCallback, useEffect, useState } from "react";
@@ -30,12 +32,13 @@ import { PageHeader } from "../../../components/layout/app-shell";
 import {
   createMonitoringTarget,
   deleteMonitoringTarget,
+  fetchAccounts,
   fetchMonitoringTargets,
   refreshMonitoringTarget,
   fetchMonitoringSnapshots,
 } from "../../../lib/api";
 import { formatShanghaiTime } from "../../../lib/time";
-import type { MonitoringTarget, MonitoringSnapshot } from "../../../types";
+import type { MonitoringTarget, MonitoringSnapshot, PlatformAccount } from "../../../types";
 
 const { Text } = Typography;
 
@@ -72,17 +75,25 @@ function getRefreshInterval(target: MonitoringTarget): number {
 
 export function XhsBenchmarksPage() {
   const [targets, setTargets] = useState<MonitoringTarget[]>([]);
+  const [accounts, setAccounts] = useState<PlatformAccount[]>([]);
   const [snapshots, setSnapshots] = useState<Record<number, MonitoringSnapshot[]>>({});
   const [expandedTargetId, setExpandedTargetId] = useState<number | null>(null);
   const [newUrl, setNewUrl] = useState("");
   const [newInterval, setNewInterval] = useState<number>(30);
+  const [newAccountId, setNewAccountId] = useState<number | null>(null);
   const [isAdding, setIsAdding] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingAccounts, setIsLoadingAccounts] = useState(true);
   const [refreshingIds, setRefreshingIds] = useState<Set<number>>(new Set());
   const [loadingSnapshotIds, setLoadingSnapshotIds] = useState<Set<number>>(new Set());
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [latestSnapshots, setLatestSnapshots] = useState<Record<number, MonitoringSnapshot>>({});
+
+  const pcAccounts = accounts.filter(
+    (a) => a.platform === "xhs" && a.sub_type === "pc"
+  );
+  const activePcAccounts = pcAccounts.filter((a) => a.status === "active");
 
   const loadTargets = useCallback(async () => {
     setIsLoading(true);
@@ -116,9 +127,26 @@ export function XhsBenchmarksPage() {
     }
   }, []);
 
+  const loadAccounts = useCallback(async () => {
+    setIsLoadingAccounts(true);
+    try {
+      const loaded = await fetchAccounts("xhs");
+      setAccounts(loaded);
+      const firstActive = loaded.find(
+        (a) => a.platform === "xhs" && a.sub_type === "pc" && a.status === "active"
+      );
+      setNewAccountId((c) => c ?? firstActive?.id ?? null);
+    } catch {
+      setAccounts([]);
+    } finally {
+      setIsLoadingAccounts(false);
+    }
+  }, []);
+
   useEffect(() => {
     void loadTargets();
-  }, [loadTargets]);
+    void loadAccounts();
+  }, [loadTargets, loadAccounts]);
 
   async function handleAdd() {
     const trimmed = newUrl.trim();
@@ -131,6 +159,7 @@ export function XhsBenchmarksPage() {
         target_type: "note_url",
         name: trimmed,
         value: trimmed,
+        platform_account_id: newAccountId,
         config: { refresh_interval_minutes: newInterval },
       });
       setNewUrl("");
@@ -280,7 +309,20 @@ export function XhsBenchmarksPage() {
             value={newUrl}
             onChange={(e) => setNewUrl(e.target.value)}
             onPressEnter={handleAdd}
-            style={{ width: 400 }}
+            style={{ width: 340 }}
+            allowClear
+          />
+          <Select
+            placeholder="选择 PC 账号"
+            loading={isLoadingAccounts}
+            value={newAccountId}
+            onChange={setNewAccountId}
+            options={pcAccounts.map((a) => ({
+              value: a.id!,
+              label: `${a.nickname || `PC ${a.id}`} · ${a.status}`,
+              disabled: a.status !== "active",
+            }))}
+            style={{ width: 220 }}
             allowClear
           />
           <Space>
@@ -398,6 +440,16 @@ export function XhsBenchmarksPage() {
                     <Text type="secondary" style={{ fontSize: 12 }}>
                       最近刷新：{formatShanghaiTime(target.last_refreshed_at)}
                     </Text>
+                    {target.platform_account_id && (() => {
+                      const acct = accounts.find((a) => a.id === target.platform_account_id);
+                      return (
+                        <Tooltip title={`PC 账号 ID: ${target.platform_account_id}`}>
+                          <Tag bordered={false} style={{ fontSize: 11 }} color={acct?.status === "active" ? "green" : "default"}>
+                            {acct?.nickname || `PC ${target.platform_account_id}`} · {acct?.status || "unknown"}
+                          </Tag>
+                        </Tooltip>
+                      );
+                    })()}
                   </Space>
 
                   {/* Engagement metrics */}
