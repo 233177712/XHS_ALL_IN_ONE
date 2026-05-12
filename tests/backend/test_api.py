@@ -108,6 +108,14 @@ def test_crawler_page_uses_antd_table():
     assert "Table" in source
 
 
+def test_crawler_page_time_sleep_defaults_to_120_and_caps_at_200():
+    source = open("frontend/src/pages/platforms/xhs/crawler-page.tsx", encoding="utf-8").read()
+
+    assert "useState(120)" in source
+    assert "max={200}" in source
+    assert "setTimeSleep(v ?? 120)" in source
+
+
 def test_discovery_uses_antd_components_and_preserves_core_logic():
     source = open("frontend/src/pages/platforms/xhs/discovery-page.tsx", encoding="utf-8").read()
 
@@ -3093,6 +3101,82 @@ def test_xhs_data_crawl_marks_partial_failures_and_fetches_comments(tmp_path):
         assert ("comments", "https://www.xiaohongshu.com/explore/data-url-001") in FakeDataCrawlAdapter.calls
     finally:
         app.dependency_overrides.pop(get_xhs_pc_api_adapter_factory, None)
+        app.dependency_overrides.pop(db_dependency, None)
+
+
+def test_xhs_data_crawl_accepts_time_sleep_above_sixty_and_uses_requested_value(tmp_path, monkeypatch):
+    from backend.app.api.platforms.xhs import crawl as crawl_api
+    from backend.app.api.platforms.xhs.pc import get_xhs_pc_api_adapter_factory
+
+    class FakeTimeSleepAdapter:
+        def __init__(self, cookies):
+            self.cookies = cookies
+
+        def get_note_info(self, url):
+            note_id = url.rsplit("/", 1)[-1]
+            return True, "ok", {
+                "data": {
+                    "items": [
+                        {
+                            "note_card": {
+                                "note_id": note_id,
+                                "display_title": f"title {note_id}",
+                                "desc": "detail body",
+                                "user": {"nickname": "detail author"},
+                                "image_list": [{"url": "https://img.example/data-url.png"}],
+                            }
+                        }
+                    ]
+                }
+            }
+
+    sleep_calls = []
+    monkeypatch.setattr(crawl_api.time, "sleep", lambda seconds: sleep_calls.append(seconds))
+
+    db_dependency, owner_token, owner_account_id = _create_pc_account_with_cookie(tmp_path, "time-sleep-owner")
+    app.dependency_overrides[get_xhs_pc_api_adapter_factory] = lambda: FakeTimeSleepAdapter
+    try:
+        response = client.post(
+            "/api/xhs/crawl/data",
+            headers={"Authorization": f"Bearer {owner_token}"},
+            json={
+                "account_id": owner_account_id,
+                "mode": "note_urls",
+                "urls": [
+                    "https://www.xiaohongshu.com/explore/data-url-001",
+                    "https://www.xiaohongshu.com/explore/data-url-002",
+                ],
+                "time_sleep": 120,
+            },
+        )
+
+        assert response.status_code == 200
+        payload = _parse_sse_response(response)
+        assert payload["success_count"] == 2
+        assert payload["failed_count"] == 0
+        assert sleep_calls == [120]
+    finally:
+        app.dependency_overrides.pop(get_xhs_pc_api_adapter_factory, None)
+        app.dependency_overrides.pop(db_dependency, None)
+
+
+def test_xhs_data_crawl_rejects_time_sleep_above_two_hundred(tmp_path):
+    db_dependency, owner_token, owner_account_id = _create_pc_account_with_cookie(tmp_path, "time-sleep-limit-owner")
+    try:
+        response = client.post(
+            "/api/xhs/crawl/data",
+            headers={"Authorization": f"Bearer {owner_token}"},
+            json={
+                "account_id": owner_account_id,
+                "mode": "note_urls",
+                "urls": ["https://www.xiaohongshu.com/explore/data-url-001"],
+                "time_sleep": 201,
+            },
+        )
+
+        assert response.status_code == 422
+        assert any(item["loc"][-1] == "time_sleep" for item in response.json()["detail"])
+    finally:
         app.dependency_overrides.pop(db_dependency, None)
 
 

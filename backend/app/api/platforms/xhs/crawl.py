@@ -53,7 +53,7 @@ class DataCrawlRequest(BaseModel):
     keyword: str = Field(default="", max_length=120)
     pages: int = Field(default=1, ge=1, le=20)
     max_notes: int = Field(default=20, ge=1, le=200)
-    time_sleep: float = Field(default=0, ge=0, le=60)
+    time_sleep: float = Field(default=120, ge=0, le=200)
     fetch_comments: bool = False
     sort_type_choice: int = Field(default=0, ge=0, le=4)
     note_type: int = Field(default=0, ge=0, le=2)
@@ -190,7 +190,7 @@ def _download_asset(url: str, user_id: int, asset_type: str) -> str | None:
 
 def _sleep_between_requests(seconds: float) -> None:
     if seconds > 0:
-        time.sleep(min(seconds, 60))
+        time.sleep(min(seconds, 200))
 
 
 def _crawl_data_item(

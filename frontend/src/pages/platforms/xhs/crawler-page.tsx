@@ -168,7 +168,7 @@ export function XhsCrawlerPage() {
   const [keyword, setKeyword] = useState("");
   const [pages, setPages] = useState(1);
   const [maxNotes, setMaxNotes] = useState(20);
-  const [timeSleep, setTimeSleep] = useState(1);
+  const [timeSleep, setTimeSleep] = useState(120);
   const [fetchCommentsChecked, setFetchCommentsChecked] = useState(false);
   const [filters, setFilters] = useState({ sort_type_choice: 0, note_type: 0, note_time: 0, note_range: 0, pos_distance: 0, geo: "" });
   const [items, setItems] = useState<XhsDataCrawlItem[]>([]);
@@ -268,7 +268,7 @@ export function XhsCrawlerPage() {
             </Col>
             <Col span={4}>
               <Form.Item label="Time Sleep">
-                <InputNumber min={0} max={60} step={0.5} value={timeSleep} onChange={(v) => setTimeSleep(v ?? 1)} style={{ width: "100%" }} />
+                <InputNumber min={0} max={200} step={0.5} value={timeSleep} onChange={(v) => setTimeSleep(v ?? 120)} style={{ width: "100%" }} />
               </Form.Item>
             </Col>
             <Col span={4} style={{ display: "flex", alignItems: "center", paddingTop: 8 }}>
