@@ -213,7 +213,7 @@ export function XhsAccountsPage() {
                           <Statistic
                             title={<span style={{ color: "rgba(255,255,255,0.45)", fontSize: 12 }}>类型</span>}
                             value="Creator"
-                            valueStyle={{ color: "rgba(255,255,255,0.88)", fontSize: 14 }}
+                            styles={{ content: { color: "rgba(255,255,255,0.88)", fontSize: 14 } }}
                           />
                         </Col>
                         {profileValue(account, "red_id") ? (
@@ -221,7 +221,7 @@ export function XhsAccountsPage() {
                             <Statistic
                               title={<span style={{ color: "rgba(255,255,255,0.45)", fontSize: 12 }}>小红书号</span>}
                               value={profileValue(account, "red_id") as string}
-                              valueStyle={{ color: "rgba(255,255,255,0.88)", fontSize: 14 }}
+                              styles={{ content: { color: "rgba(255,255,255,0.88)", fontSize: 14 } }}
                             />
                           </Col>
                         ) : null}
@@ -232,28 +232,28 @@ export function XhsAccountsPage() {
                           <Statistic
                             title={<span style={{ color: "rgba(255,255,255,0.45)", fontSize: 12 }}>类型</span>}
                             value="PC"
-                            valueStyle={{ color: "rgba(255,255,255,0.88)", fontSize: 14 }}
+                            styles={{ content: { color: "rgba(255,255,255,0.88)", fontSize: 14 } }}
                           />
                         </Col>
                         <Col span={6}>
                           <Statistic
                             title={<span style={{ color: "rgba(255,255,255,0.45)", fontSize: 12 }}>粉丝</span>}
                             value={profileValue(account, "followers") || "-"}
-                            valueStyle={{ color: "rgba(255,255,255,0.88)", fontSize: 14 }}
+                            styles={{ content: { color: "rgba(255,255,255,0.88)", fontSize: 14 } }}
                           />
                         </Col>
                         <Col span={6}>
                           <Statistic
                             title={<span style={{ color: "rgba(255,255,255,0.45)", fontSize: 12 }}>关注</span>}
                             value={profileValue(account, "following") || "-"}
-                            valueStyle={{ color: "rgba(255,255,255,0.88)", fontSize: 14 }}
+                            styles={{ content: { color: "rgba(255,255,255,0.88)", fontSize: 14 } }}
                           />
                         </Col>
                         <Col span={6}>
                           <Statistic
                             title={<span style={{ color: "rgba(255,255,255,0.45)", fontSize: 12 }}>获赞</span>}
                             value={profileValue(account, "likes") || "-"}
-                            valueStyle={{ color: "rgba(255,255,255,0.88)", fontSize: 14 }}
+                            styles={{ content: { color: "rgba(255,255,255,0.88)", fontSize: 14 } }}
                           />
                         </Col>
                       </Row>

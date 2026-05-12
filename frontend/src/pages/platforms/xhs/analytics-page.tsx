@@ -202,7 +202,7 @@ export function XhsAnalyticsPage() {
                 title={<span style={{ color: "#8c8c8c", fontSize: 13 }}>{metric.label}</span>}
                 value={metric.value}
                 prefix={<span style={{ color: metricIconColors[idx], marginRight: 4 }}>{metric.icon}</span>}
-                valueStyle={{ fontSize: 28, fontWeight: 600, color: "#e8e8e8" }}
+                styles={{ content: { fontSize: 28, fontWeight: 600, color: "#e8e8e8" } }}
               />
             </Card>
           </Col>

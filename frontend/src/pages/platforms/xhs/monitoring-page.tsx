@@ -260,21 +260,21 @@ export function XhsMonitoringPage() {
                         title="匹配"
                         value={snapshotMetric(snapshotsByTarget[target.id], "matched_count")}
                         suffix="条"
-                        valueStyle={{ fontSize: 16 }}
+                        styles={{ content: { fontSize: 16 } }}
                       />
                     </Col>
                     <Col span={8}>
                       <Statistic
                         title="互动"
                         value={snapshotMetric(snapshotsByTarget[target.id], "total_engagement")}
-                        valueStyle={{ fontSize: 16 }}
+                        styles={{ content: { fontSize: 16 } }}
                       />
                     </Col>
                     <Col span={8}>
                       <Statistic
                         title="快照时间"
                         value={formatTime(snapshotsByTarget[target.id].created_at)}
-                        valueStyle={{ fontSize: 12 }}
+                        styles={{ content: { fontSize: 12 } }}
                       />
                     </Col>
                   </Row>

@@ -333,7 +333,7 @@ export function AutoOpsPage() {
                 {/* Stats */}
                 <Row gutter={16} style={{ marginBottom: 12 }}>
                   <Col span={8}>
-                    <Statistic title="已发布" value={task.total_published} valueStyle={{ fontSize: 20, color: "#e8e8e8" }} />
+                    <Statistic title="已发布" value={task.total_published} styles={{ content: { fontSize: 20, color: "#e8e8e8" } }} />
                   </Col>
                 </Row>
 

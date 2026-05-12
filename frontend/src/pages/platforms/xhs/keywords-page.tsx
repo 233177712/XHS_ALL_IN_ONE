@@ -220,13 +220,13 @@ export function XhsKeywordsPage() {
 
                   <Row gutter={16} style={{ marginBottom: 16 }}>
                     <Col span={8}>
-                      <Statistic title="命中" value={detail?.trend.total_matches ?? 0} suffix="条" valueStyle={{ fontSize: 16 }} />
+                      <Statistic title="命中" value={detail?.trend.total_matches ?? 0} suffix="条" styles={{ content: { fontSize: 16 } }} />
                     </Col>
                     <Col span={8}>
-                      <Statistic title="互动" value={detail?.trend.total_engagement ?? 0} valueStyle={{ fontSize: 16 }} />
+                      <Statistic title="互动" value={detail?.trend.total_engagement ?? 0} styles={{ content: { fontSize: 16 } }} />
                     </Col>
                     <Col span={8}>
-                      <Statistic title="关键词" value={group.keywords.length} suffix="个" valueStyle={{ fontSize: 16 }} />
+                      <Statistic title="关键词" value={group.keywords.length} suffix="个" styles={{ content: { fontSize: 16 } }} />
                     </Col>
                   </Row>
 

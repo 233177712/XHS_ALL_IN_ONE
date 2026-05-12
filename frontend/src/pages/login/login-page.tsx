@@ -134,7 +134,7 @@ export function LoginPage() {
                   </Space>
                 }
                 value={128}
-                valueStyle={{ color: "#fff", fontSize: 28 }}
+                styles={{ content: { color: "#fff", fontSize: 28 } }}
               />
             </Col>
             <Col span={8}>
@@ -146,7 +146,7 @@ export function LoginPage() {
                   </Space>
                 }
                 value={14}
-                valueStyle={{ color: "#fff", fontSize: 28 }}
+                styles={{ content: { color: "#fff", fontSize: 28 } }}
               />
             </Col>
             <Col span={8}>
@@ -158,7 +158,7 @@ export function LoginPage() {
                   </Space>
                 }
                 value={7}
-                valueStyle={{ color: "#fff", fontSize: 28 }}
+                styles={{ content: { color: "#fff", fontSize: 28 } }}
               />
             </Col>
           </Row>
@@ -245,7 +245,7 @@ export function LoginPage() {
                   loading={isSubmitting}
                   disabled={auth.isChecking}
                   icon={<ArrowRightOutlined />}
-                  iconPosition="end"
+                  iconPlacement="end"
                 >
                   {mode === "login" ? "进入工作台" : "创建并进入"}
                 </Button>
