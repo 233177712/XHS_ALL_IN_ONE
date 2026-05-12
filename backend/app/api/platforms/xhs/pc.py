@@ -64,10 +64,7 @@ def _metric(value: Any) -> int:
     if not text:
         return 0
     multiplier = 1
-    if text.endswith("万"):
-        multiplier = 10000
-        text = text[:-1]
-    elif text.lower().endswith("w"):
+    if text.endswith("万") or text.lower().endswith("w"):
         multiplier = 10000
         text = text[:-1]
     number_match = re.search(r"\d+(?:\.\d+)?", text)

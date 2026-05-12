@@ -3,16 +3,16 @@ from __future__ import annotations
 import os
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 try:
     from pydantic_settings import BaseSettings, SettingsConfigDict
 except ImportError:  # pragma: no cover - handled by dependency installation
-    BaseSettings = object
-    SettingsConfigDict = dict
+    BaseSettings: type = object  # type: ignore[no-redef]
+    SettingsConfigDict: type = dict  # type: ignore[no-redef]
 
 
-def _load_yaml_config() -> Dict[str, Any]:
+def _load_yaml_config() -> dict[str, Any]:
     """Load YAML configuration files and flatten into env-var-style keys.
 
     Loading order (later values override earlier ones):
@@ -25,7 +25,7 @@ def _load_yaml_config() -> Dict[str, Any]:
         return {}
 
     project_root = Path(__file__).resolve().parent.parent.parent.parent
-    flat: Dict[str, Any] = {}
+    flat: dict[str, Any] = {}
 
     # Mapping from nested YAML paths to Settings field names
     yaml_key_map = {
@@ -58,7 +58,7 @@ def _load_yaml_config() -> Dict[str, Any]:
     # 1. Load config/default.yaml
     default_yaml = project_root / "config" / "default.yaml"
     if default_yaml.exists():
-        with open(default_yaml, "r", encoding="utf-8") as f:
+        with open(default_yaml, encoding="utf-8") as f:
             data = yaml.safe_load(f)
             if data:
                 _flatten(data)
@@ -70,7 +70,7 @@ def _load_yaml_config() -> Dict[str, Any]:
         if not config_path.is_absolute():
             config_path = project_root / config_path
         if config_path.exists():
-            with open(config_path, "r", encoding="utf-8") as f:
+            with open(config_path, encoding="utf-8") as f:
                 data = yaml.safe_load(f)
                 if data:
                     _flatten(data)

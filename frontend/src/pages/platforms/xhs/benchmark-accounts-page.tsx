@@ -1,12 +1,4 @@
-import {
-  DeleteOutlined,
-  LinkOutlined,
-  ReloadOutlined,
-  RocketOutlined,
-  ScanOutlined,
-  SettingOutlined,
-  FireOutlined,
-} from "@ant-design/icons";
+import { DeleteOutlined, LinkOutlined, ReloadOutlined, RocketOutlined, ScanOutlined, SettingOutlined } from "@ant-design/icons";
 import {
   Alert,
   Avatar,
@@ -45,12 +37,7 @@ import {
 } from "../../../lib/api";
 import { formatShanghaiTime } from "../../../lib/time";
 import { MAX_XHS_CRAWL_INTERVAL_SECONDS } from "../../../lib/xhs-crawl";
-import type {
-  BenchmarkAccountCrawlResult,
-  BenchmarkAccountPopularNote,
-  MonitoringTarget,
-  PlatformAccount,
-} from "../../../types";
+import type { BenchmarkAccountCrawlResult, BenchmarkAccountPopularNote, MonitoringTarget, PlatformAccount } from "../../../types";
 
 const { Text } = Typography;
 
@@ -72,7 +59,7 @@ function configString(target: MonitoringTarget | null, key: string, fallback = "
 function profileOf(target: MonitoringTarget): Record<string, unknown> {
   const config = target.config;
   const profile = config?.profile;
-  return profile && typeof profile === "object" && !Array.isArray(profile) ? profile as Record<string, unknown> : {};
+  return profile && typeof profile === "object" && !Array.isArray(profile) ? (profile as Record<string, unknown>) : {};
 }
 
 function profileText(target: MonitoringTarget, key: string, fallback = "-"): string {
@@ -95,7 +82,7 @@ function configBool(target: MonitoringTarget | null, key: string): boolean {
 
 function formatTimestamp(timestamp?: number | null): string {
   if (!timestamp || !Number.isFinite(timestamp)) return "-";
-  return new Date((timestamp > 10_000_000_000 ? timestamp : timestamp * 1000)).toLocaleString("zh-CN");
+  return new Date(timestamp > 10_000_000_000 ? timestamp : timestamp * 1000).toLocaleString("zh-CN");
 }
 
 export function BenchmarkAccountsPage() {
@@ -144,15 +131,9 @@ export function BenchmarkAccountsPage() {
   const [isAutoScanModalOpen, setIsAutoScanModalOpen] = useState(false);
   const [isSavingAutoScan, setIsSavingAutoScan] = useState(false);
 
-  const pcAccounts = useMemo(
-    () => accounts.filter((account) => account.platform === "xhs" && account.sub_type === "pc"),
-    [accounts],
-  );
+  const pcAccounts = useMemo(() => accounts.filter((account) => account.platform === "xhs" && account.sub_type === "pc"), [accounts]);
 
-  const activePcAccounts = useMemo(
-    () => pcAccounts.filter((account) => account.status === "active"),
-    [pcAccounts],
-  );
+  const activePcAccounts = useMemo(() => pcAccounts.filter((account) => account.status === "active"), [pcAccounts]);
 
   const loadTargets = useCallback(async () => {
     setIsLoading(true);
@@ -183,15 +164,6 @@ export function BenchmarkAccountsPage() {
     void loadTargets();
     void loadAccounts();
   }, [loadTargets, loadAccounts]);
-
-  function closeModals() {
-    setActiveTarget(null);
-    setIsPopupModalOpen(false);
-    setCrawlResult(null);
-    setIsScanModalOpen(false);
-    setScanResult(null);
-    setIsAutoScanModalOpen(false);
-  }
 
   async function handleAdd() {
     const trimmed = newUrl.trim();
@@ -232,13 +204,9 @@ export function BenchmarkAccountsPage() {
 
   function openCrawlModal(target: MonitoringTarget) {
     const preferredAccountId =
-      typeof target.config?.crawler_account_id === "number"
-        ? target.config.crawler_account_id
-        : target.platform_account_id;
+      typeof target.config?.crawler_account_id === "number" ? target.config.crawler_account_id : target.platform_account_id;
     const defaultAccountId =
-      activePcAccounts.find((account) => account.id === preferredAccountId)?.id
-      ?? activePcAccounts[0]?.id
-      ?? pcAccounts[0]?.id;
+      activePcAccounts.find((account) => account.id === preferredAccountId)?.id ?? activePcAccounts[0]?.id ?? pcAccounts[0]?.id;
     setActiveTarget(target);
     setCrawlResult(null);
     setCrawlProgressItems([]);
@@ -272,7 +240,10 @@ export function BenchmarkAccountsPage() {
           max_notes: values.max_notes,
           request_interval_seconds: values.request_interval_seconds,
         },
-        (msg) => { setCrawlProgressMsg(msg); if (msg.includes("分析")) setIsAnalyzing(true); },
+        (msg) => {
+          setCrawlProgressMsg(msg);
+          if (msg.includes("分析")) setIsAnalyzing(true);
+        },
         (item) => setCrawlProgressItems((prev) => [...prev, item]),
         (msg) => setError(msg),
       );
@@ -292,13 +263,9 @@ export function BenchmarkAccountsPage() {
 
   function openScanModal(target: MonitoringTarget) {
     const preferredAccountId =
-      typeof target.config?.last_scan_account_id === "number"
-        ? target.config.last_scan_account_id
-        : target.platform_account_id;
+      typeof target.config?.last_scan_account_id === "number" ? target.config.last_scan_account_id : target.platform_account_id;
     const defaultAccountId =
-      activePcAccounts.find((account) => account.id === preferredAccountId)?.id
-      ?? activePcAccounts[0]?.id
-      ?? pcAccounts[0]?.id;
+      activePcAccounts.find((account) => account.id === preferredAccountId)?.id ?? activePcAccounts[0]?.id ?? pcAccounts[0]?.id;
     setActiveTarget(target);
     setScanResult(null);
     setIsScanModalOpen(true);
@@ -336,10 +303,7 @@ export function BenchmarkAccountsPage() {
   }
 
   function openAutoScanModal(target: MonitoringTarget) {
-    const prefAccountId =
-      typeof target.config?.scan_account_id === "number"
-        ? target.config.scan_account_id
-        : activePcAccounts[0]?.id;
+    const prefAccountId = typeof target.config?.scan_account_id === "number" ? target.config.scan_account_id : activePcAccounts[0]?.id;
     setActiveTarget(target);
     setIsAutoScanModalOpen(true);
     autoScanForm.setFieldsValue({
@@ -384,8 +348,12 @@ export function BenchmarkAccountsPage() {
         key: "title",
         render: (_value, record) => (
           <Space direction="vertical" size={2}>
-            <a href={record.note_url} target="_blank" rel="noreferrer">{record.title || record.note_id}</a>
-            <Text type="secondary" style={{ fontSize: 12 }}>{record.author_name}</Text>
+            <a href={record.note_url} target="_blank" rel="noreferrer">
+              {record.title || record.note_id}
+            </a>
+            <Text type="secondary" style={{ fontSize: 12 }}>
+              {record.author_name}
+            </Text>
           </Space>
         ),
       },
@@ -418,7 +386,18 @@ export function BenchmarkAccountsPage() {
         eyebrow="Benchmark Account Pool"
         title="对标账号池"
         description="维护小红书对标账号主页链接。抓取历史爆款直接入库，扫描最新发帖加入竞品监控以跟踪互动增速。"
-        action={<Button icon={<ReloadOutlined />} onClick={() => { void loadTargets(); void loadAccounts(); }} loading={isLoading || isLoadingAccounts}>刷新</Button>}
+        action={
+          <Button
+            icon={<ReloadOutlined />}
+            onClick={() => {
+              void loadTargets();
+              void loadAccounts();
+            }}
+            loading={isLoading || isLoadingAccounts}
+          >
+            刷新
+          </Button>
+        }
       />
 
       <Card size="small" style={{ ...cardStyle, marginBottom: 24 }}>
@@ -432,15 +411,21 @@ export function BenchmarkAccountsPage() {
             allowClear
             style={{ width: 460 }}
           />
-          <Button type="primary" onClick={() => void handleAdd()} loading={isAdding}>添加到账号池</Button>
+          <Button type="primary" onClick={() => void handleAdd()} loading={isAdding}>
+            添加到账号池
+          </Button>
         </Space>
       </Card>
 
       {error && <Alert type="error" message={error} showIcon closable onClose={() => setError(null)} style={{ marginBottom: 16 }} />}
-      {message && <Alert type="success" message={message} showIcon closable onClose={() => setMessage(null)} style={{ marginBottom: 16 }} />}
+      {message && (
+        <Alert type="success" message={message} showIcon closable onClose={() => setMessage(null)} style={{ marginBottom: 16 }} />
+      )}
 
       {isLoading ? (
-        <Card style={cardStyle}><Text type="secondary">正在加载对标账号池...</Text></Card>
+        <Card style={cardStyle}>
+          <Text type="secondary">正在加载对标账号池...</Text>
+        </Card>
       ) : targets.length === 0 ? (
         <Card style={cardStyle}>
           <Empty description="还没有对标账号，先在上方添加一个主页链接。" />
@@ -459,18 +444,34 @@ export function BenchmarkAccountsPage() {
                   <Space direction="vertical" size={10} style={{ width: "100%" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
                       <div style={{ minWidth: 0, flex: 1, display: "flex", gap: 12 }}>
-                        <Avatar src={avatarOf(target) || undefined} size={52} style={{ background: "#1668dc", flexShrink: 0, fontSize: 18 }}>
+                        <Avatar
+                          src={avatarOf(target) || undefined}
+                          size={52}
+                          style={{ background: "#1668dc", flexShrink: 0, fontSize: 18 }}
+                        >
                           {displayNameOf(target).slice(0, 1).toUpperCase()}
                         </Avatar>
                         <div style={{ minWidth: 0, flex: 1 }}>
-                          <Text strong style={{ display: "block" }} ellipsis={{ tooltip: displayNameOf(target) }}>{displayNameOf(target)}</Text>
-                          <Text type="secondary" style={{ fontSize: 12, display: "block" }} ellipsis={{ tooltip: target.name }}>ID：{target.name || "-"}</Text>
-                          <Text type="secondary" style={{ fontSize: 12 }} ellipsis={{ tooltip: target.value }}>{target.value}</Text>
+                          <Text strong style={{ display: "block" }} ellipsis={{ tooltip: displayNameOf(target) }}>
+                            {displayNameOf(target)}
+                          </Text>
+                          <Text type="secondary" style={{ fontSize: 12, display: "block" }} ellipsis={{ tooltip: target.name }}>
+                            ID：{target.name || "-"}
+                          </Text>
+                          <Text type="secondary" style={{ fontSize: 12 }} ellipsis={{ tooltip: target.value }}>
+                            {target.value}
+                          </Text>
                         </div>
                       </div>
                       <Space size={4}>
-                        {scanEnabled && <Tag color="blue" icon={<ScanOutlined />}>自动扫描</Tag>}
-                        <Tag color={target.status === "active" ? "green" : "default"}>{target.status === "active" ? "可抓取" : target.status}</Tag>
+                        {scanEnabled && (
+                          <Tag color="blue" icon={<ScanOutlined />}>
+                            自动扫描
+                          </Tag>
+                        )}
+                        <Tag color={target.status === "active" ? "green" : "default"}>
+                          {target.status === "active" ? "可抓取" : target.status}
+                        </Tag>
                       </Space>
                     </div>
 
@@ -485,32 +486,44 @@ export function BenchmarkAccountsPage() {
                       }}
                     >
                       <div style={{ textAlign: "center" }}>
-                        <Text type="secondary" style={{ fontSize: 12 }}>粉丝</Text>
+                        <Text type="secondary" style={{ fontSize: 12 }}>
+                          粉丝
+                        </Text>
                         <div style={{ fontSize: 15, fontWeight: 600 }}>{profileText(target, "followers")}</div>
                       </div>
                       <div style={{ textAlign: "center" }}>
-                        <Text type="secondary" style={{ fontSize: 12 }}>发帖</Text>
+                        <Text type="secondary" style={{ fontSize: 12 }}>
+                          发帖
+                        </Text>
                         <div style={{ fontSize: 15, fontWeight: 600 }}>{profileText(target, "note_count")}</div>
                       </div>
                       <div style={{ textAlign: "center" }}>
-                        <Text type="secondary" style={{ fontSize: 12 }}>关注</Text>
+                        <Text type="secondary" style={{ fontSize: 12 }}>
+                          关注
+                        </Text>
                         <div style={{ fontSize: 15, fontWeight: 600 }}>{profileText(target, "following")}</div>
                       </div>
                       <div style={{ textAlign: "center" }}>
-                        <Text type="secondary" style={{ fontSize: 12 }}>获赞藏</Text>
+                        <Text type="secondary" style={{ fontSize: 12 }}>
+                          获赞藏
+                        </Text>
                         <div style={{ fontSize: 15, fontWeight: 600 }}>{profileText(target, "likes")}</div>
                       </div>
                     </div>
 
                     <Space size="middle" wrap>
-                      <Text type="secondary" style={{ fontSize: 12 }}>添加时间：{formatShanghaiTime(target.created_at)}</Text>
-                      <Text type="secondary" style={{ fontSize: 12 }}>最近抓取爆款：{formatShanghaiTime(target.last_refreshed_at)}</Text>
-                      <Text type="secondary" style={{ fontSize: 12 }}>小红书号：{profileText(target, "red_id")}</Text>
+                      <Text type="secondary" style={{ fontSize: 12 }}>
+                        添加时间：{formatShanghaiTime(target.created_at)}
+                      </Text>
+                      <Text type="secondary" style={{ fontSize: 12 }}>
+                        最近抓取爆款：{formatShanghaiTime(target.last_refreshed_at)}
+                      </Text>
+                      <Text type="secondary" style={{ fontSize: 12 }}>
+                        小红书号：{profileText(target, "red_id")}
+                      </Text>
                     </Space>
 
-                    {target.last_crawl_error && (
-                      <Alert type="warning" showIcon message={target.last_crawl_error} />
-                    )}
+                    {target.last_crawl_error && <Alert type="warning" showIcon message={target.last_crawl_error} />}
 
                     {(scanEnabled || (target.monitored_note_count ?? 0) > 0) && (
                       <div style={{ padding: "6px 10px", background: "#141414", borderRadius: 6 }}>
@@ -540,13 +553,26 @@ export function BenchmarkAccountsPage() {
                     )}
 
                     <Space wrap>
-                      <Button type="primary" icon={<RocketOutlined />} onClick={() => openCrawlModal(target)} disabled={!activePcAccounts.length || isLoadingAccounts}>
+                      <Button
+                        type="primary"
+                        icon={<RocketOutlined />}
+                        onClick={() => openCrawlModal(target)}
+                        disabled={!activePcAccounts.length || isLoadingAccounts}
+                      >
                         抓取爆款
                       </Button>
-                      <Button icon={<ScanOutlined />} onClick={() => openScanModal(target)} disabled={!activePcAccounts.length || isLoadingAccounts}>
+                      <Button
+                        icon={<ScanOutlined />}
+                        onClick={() => openScanModal(target)}
+                        disabled={!activePcAccounts.length || isLoadingAccounts}
+                      >
                         扫描并监控
                       </Button>
-                      <Button icon={<SettingOutlined />} onClick={() => openAutoScanModal(target)} disabled={!activePcAccounts.length || isLoadingAccounts}>
+                      <Button
+                        icon={<SettingOutlined />}
+                        onClick={() => openAutoScanModal(target)}
+                        disabled={!activePcAccounts.length || isLoadingAccounts}
+                      >
                         设置自动扫描
                       </Button>
                       <Popconfirm
@@ -555,7 +581,9 @@ export function BenchmarkAccountsPage() {
                         okText="删除"
                         cancelText="取消"
                       >
-                        <Button danger icon={<DeleteOutlined />} loading={deletingIds.has(target.id)}>移出账号池</Button>
+                        <Button danger icon={<DeleteOutlined />} loading={deletingIds.has(target.id)}>
+                          移出账号池
+                        </Button>
                       </Popconfirm>
                     </Space>
                   </Space>
@@ -569,7 +597,13 @@ export function BenchmarkAccountsPage() {
       {/* Crawl Popular Modal */}
       <Modal
         open={isPopupModalOpen}
-        onCancel={() => { if (!isCrawling) { setIsPopupModalOpen(false); setActiveTarget(null); setCrawlResult(null); } }}
+        onCancel={() => {
+          if (!isCrawling) {
+            setIsPopupModalOpen(false);
+            setActiveTarget(null);
+            setCrawlResult(null);
+          }
+        }}
         width={980}
         title={`抓取历史爆款${activeTarget ? ` · ${activeTarget.name}` : ""}`}
         okText="开始抓取"
@@ -617,21 +651,35 @@ export function BenchmarkAccountsPage() {
         {(isCrawling || crawlProgressItems.length > 0) && (
           <div style={{ marginBottom: 16 }}>
             {crawlProgressMsg && (
-              <Alert
-                type={isAnalyzing ? "warning" : "info"}
-                showIcon
-                message={crawlProgressMsg}
-                style={{ marginBottom: 12 }}
-              />
+              <Alert type={isAnalyzing ? "warning" : "info"} showIcon message={crawlProgressMsg} style={{ marginBottom: 12 }} />
             )}
             {crawlProgressItems.length > 0 && (
               <div style={{ background: "#141414", borderRadius: 8, maxHeight: 300, overflowY: "auto", padding: "8px 12px" }}>
                 {crawlProgressItems.map((item, index) => (
-                  <div key={index} style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 0", borderBottom: index < crawlProgressItems.length - 1 ? "1px solid #262626" : "none", fontSize: 13 }}>
+                  <div
+                    key={index}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      padding: "4px 0",
+                      borderBottom: index < crawlProgressItems.length - 1 ? "1px solid #262626" : "none",
+                      fontSize: 13,
+                    }}
+                  >
                     <span style={{ color: item.status === "success" ? "#52c41a" : "#ff4d4f", flexShrink: 0 }}>
                       {item.status === "success" ? "✓" : "✗"}
                     </span>
-                    <span style={{ color: "rgba(255,255,255,0.65)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }} title={item.note?.title || item.source}>
+                    <span
+                      style={{
+                        color: "rgba(255,255,255,0.65)",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                        flex: 1,
+                      }}
+                      title={item.note?.title || item.source}
+                    >
                       {item.note?.title || item.source || `第 ${index + 1} 条`}
                     </span>
                     {item.note && (
@@ -649,20 +697,38 @@ export function BenchmarkAccountsPage() {
         {crawlResult && (
           <Space direction="vertical" size={16} style={{ width: "100%" }}>
             <Row gutter={12}>
-              <Col span={6}><Card style={cardStyle}><Statistic title="候选链接" value={crawlResult.candidate_count} /></Card></Col>
-              <Col span={6}><Card style={cardStyle}><Statistic title="详情成功" value={crawlResult.crawled_count} /></Card></Col>
-              <Col span={6}><Card style={cardStyle}><Statistic title="判定爆款" value={crawlResult.popular_count} /></Card></Col>
-              <Col span={6}><Card style={cardStyle}><Statistic title="已入内容库" value={crawlResult.imported_count} /></Card></Col>
+              <Col span={6}>
+                <Card style={cardStyle}>
+                  <Statistic title="候选链接" value={crawlResult.candidate_count} />
+                </Card>
+              </Col>
+              <Col span={6}>
+                <Card style={cardStyle}>
+                  <Statistic title="详情成功" value={crawlResult.crawled_count} />
+                </Card>
+              </Col>
+              <Col span={6}>
+                <Card style={cardStyle}>
+                  <Statistic title="判定爆款" value={crawlResult.popular_count} />
+                </Card>
+              </Col>
+              <Col span={6}>
+                <Card style={cardStyle}>
+                  <Statistic title="已入内容库" value={crawlResult.imported_count} />
+                </Card>
+              </Col>
             </Row>
             <Alert
               type={crawlResult.imported_count > 0 ? "success" : "info"}
               showIcon
               message={
-                crawlResult.imported_count > 0
-                  ? `已将 ${crawlResult.imported_count} 篇历史爆款加入内容库。`
-                  : "本次未筛出历史爆款笔记。"
+                crawlResult.imported_count > 0 ? `已将 ${crawlResult.imported_count} 篇历史爆款加入内容库。` : "本次未筛出历史爆款笔记。"
               }
-              action={<Button type="link" onClick={() => navigate("/platforms/xhs/library")}>前往内容库</Button>}
+              action={
+                <Button type="link" onClick={() => navigate("/platforms/xhs/library")}>
+                  前往内容库
+                </Button>
+              }
             />
             <Table<BenchmarkAccountPopularNote>
               dataSource={crawlResult.items}
@@ -680,7 +746,13 @@ export function BenchmarkAccountsPage() {
       {/* Scan & Monitor Modal */}
       <Modal
         open={isScanModalOpen}
-        onCancel={() => { if (!isScanning) { setIsScanModalOpen(false); setActiveTarget(null); setScanResult(null); } }}
+        onCancel={() => {
+          if (!isScanning) {
+            setIsScanModalOpen(false);
+            setActiveTarget(null);
+            setScanResult(null);
+          }
+        }}
         width={640}
         title={`扫描并加入竞品监控${activeTarget ? ` · ${activeTarget.name}` : ""}`}
         okText="开始扫描"
@@ -730,8 +802,16 @@ export function BenchmarkAccountsPage() {
         {scanResult && (
           <Space direction="vertical" size={16} style={{ width: "100%" }}>
             <Row gutter={12}>
-              <Col span={12}><Card style={cardStyle}><Statistic title="扫描到链接" value={scanResult.scanned_links} /></Card></Col>
-              <Col span={12}><Card style={cardStyle}><Statistic title="新增竞品监控" value={scanResult.new_monitoring_targets} /></Card></Col>
+              <Col span={12}>
+                <Card style={cardStyle}>
+                  <Statistic title="扫描到链接" value={scanResult.scanned_links} />
+                </Card>
+              </Col>
+              <Col span={12}>
+                <Card style={cardStyle}>
+                  <Statistic title="新增竞品监控" value={scanResult.new_monitoring_targets} />
+                </Card>
+              </Col>
             </Row>
             <Alert
               type={scanResult.new_monitoring_targets > 0 ? "success" : "info"}
@@ -741,7 +821,11 @@ export function BenchmarkAccountsPage() {
                   ? `已将 ${scanResult.new_monitoring_targets} 篇笔记加入竞品监控，将在后台按间隔自动刷新判定。`
                   : "未扫描到新发笔记。"
               }
-              action={<Button type="link" onClick={() => navigate("/platforms/xhs/benchmarks")}>前往竞品监控</Button>}
+              action={
+                <Button type="link" onClick={() => navigate("/platforms/xhs/benchmarks")}>
+                  前往竞品监控
+                </Button>
+              }
             />
           </Space>
         )}
@@ -750,7 +834,10 @@ export function BenchmarkAccountsPage() {
       {/* Auto Scan Settings Modal */}
       <Modal
         open={isAutoScanModalOpen}
-        onCancel={() => { setIsAutoScanModalOpen(false); setActiveTarget(null); }}
+        onCancel={() => {
+          setIsAutoScanModalOpen(false);
+          setActiveTarget(null);
+        }}
         width={640}
         title={`自动扫描设置${activeTarget ? ` · ${activeTarget.name}` : ""}`}
         okText="保存设置"

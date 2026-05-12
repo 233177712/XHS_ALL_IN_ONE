@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import logging
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -182,7 +182,7 @@ def run_due_publish_jobs(
     *,
     db: Session,
     current_user: User,
-    now: Optional[datetime],
+    now: datetime | None,
     platform: str,
     adapter_factory,
 ) -> dict[str, Any]:
@@ -219,7 +219,7 @@ def run_due_publish_jobs(
 def run_due_publish_jobs_for_all_users(
     *,
     db: Session,
-    now: Optional[datetime],
+    now: datetime | None,
     platform: str,
     adapter_factory,
 ) -> dict[str, Any]:
@@ -382,7 +382,7 @@ def _refresh_monitoring_target(db: Session, target: MonitoringTarget, now: datet
     }
 
 
-def run_monitoring_refresh_for_all_users(*, db: Session, now: Optional[datetime], platform: str) -> dict[str, Any]:
+def run_monitoring_refresh_for_all_users(*, db: Session, now: datetime | None, platform: str) -> dict[str, Any]:
     now = now or shanghai_now()
     targets = db.scalars(
         select(MonitoringTarget)
@@ -735,8 +735,8 @@ def run_due_benchmark_scans() -> None:
 
 def _check_single_account(db: Session, account: PlatformAccount, now: datetime) -> str:
     """Check one account's cookie validity. Returns the new status."""
-    from backend.app.adapters.xhs.pc_login_adapter import XhsPcLoginAdapter
     from backend.app.adapters.xhs.creator_login_adapter import XhsCreatorLoginAdapter
+    from backend.app.adapters.xhs.pc_login_adapter import XhsPcLoginAdapter
     from backend.app.services.account_service import decode_cookie_text
 
     cookie_version = db.scalars(
@@ -857,6 +857,6 @@ def start_due_publish_scheduler(interval_seconds: int) -> BackgroundScheduler:
     return scheduler
 
 
-def shutdown_due_publish_scheduler(scheduler: Optional[BackgroundScheduler]) -> None:
+def shutdown_due_publish_scheduler(scheduler: BackgroundScheduler | None) -> None:
     if scheduler is not None and scheduler.running:
         scheduler.shutdown(wait=False)

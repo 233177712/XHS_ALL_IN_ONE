@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-from typing import Optional
-
-from pydantic import BaseModel, Field
 from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -31,9 +29,9 @@ class UserResponse(BaseModel):
 
 class TokenResponse(BaseModel):
     access_token: str
-    refresh_token: Optional[str] = None
+    refresh_token: str | None = None
     token_type: str = "bearer"
-    user: Optional[UserResponse] = None
+    user: UserResponse | None = None
 
 
 def _serialize_user(user: User) -> dict:

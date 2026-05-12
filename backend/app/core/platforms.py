@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
-from enum import Enum
-from typing import List
+from enum import StrEnum
 
 
-class PlatformId(str, Enum):
+class PlatformId(StrEnum):
     XHS = "xhs"
     DOUYIN = "douyin"
     KUAISHOU = "kuaishou"
@@ -30,7 +29,7 @@ class PlatformMeta:
         return payload
 
 
-_PLATFORMS: List[PlatformMeta] = [
+_PLATFORMS: list[PlatformMeta] = [
     PlatformMeta(PlatformId.XHS, "小红书", "XiaoHongShu", True, "enabled", "#ff2442", "xhs"),
     PlatformMeta(PlatformId.DOUYIN, "抖音", "Douyin", False, "coming_soon", "#111111", "douyin"),
     PlatformMeta(PlatformId.KUAISHOU, "快手", "Kuaishou", False, "coming_soon", "#ff7a00", "kuaishou"),
@@ -40,7 +39,7 @@ _PLATFORMS: List[PlatformMeta] = [
 ]
 
 
-def get_platforms() -> List[PlatformMeta]:
+def get_platforms() -> list[PlatformMeta]:
     return list(_PLATFORMS)
 
 

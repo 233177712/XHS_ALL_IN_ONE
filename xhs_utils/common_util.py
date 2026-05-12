@@ -1,14 +1,14 @@
-import os
-import time
-import random
-import hashlib
 import binascii
+import hashlib
 import json
+import os
+import random
+import time
 
 import execjs
 import requests
-from loguru import logger
 from dotenv import load_dotenv
+from loguru import logger
 
 from xhs_utils.http_util import REQUEST_TIMEOUT
 from xhs_utils.xhs_creator_util import generate_xsc
@@ -55,7 +55,7 @@ def generate_web_id(a1):
 
 def _load_websectiga_env():
     try:
-        return open(_WEBSECTIGA_ENV_PATH, 'r', encoding='utf-8').read()
+        return open(_WEBSECTIGA_ENV_PATH, encoding='utf-8').read()
     except FileNotFoundError:
         return None
 

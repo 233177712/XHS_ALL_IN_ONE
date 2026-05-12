@@ -39,12 +39,7 @@ import {
   fetchXhsOverview,
   fetchXhsTopContent,
 } from "../../../lib/api";
-import type {
-  AnalyticsCommentInsight,
-  AnalyticsHotTopic,
-  AnalyticsTopContent,
-  DashboardOverview,
-} from "../../../types";
+import type { AnalyticsCommentInsight, AnalyticsHotTopic, AnalyticsTopContent, DashboardOverview } from "../../../types";
 
 const { Text } = Typography;
 
@@ -110,8 +105,7 @@ export function XhsAnalyticsPage() {
   const [overview, setOverview] = useState<DashboardOverview>(fallbackOverview);
   const [topContent, setTopContent] = useState<AnalyticsTopContent[]>([]);
   const [hotTopics, setHotTopics] = useState<AnalyticsHotTopic[]>([]);
-  const [commentInsights, setCommentInsights] =
-    useState<AnalyticsCommentInsight>(fallbackComments);
+  const [commentInsights, setCommentInsights] = useState<AnalyticsCommentInsight>(fallbackComments);
   const [isLoading, setIsLoading] = useState(true);
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -121,13 +115,12 @@ export function XhsAnalyticsPage() {
     setIsLoading(true);
     setError(null);
     try {
-      const [overviewResult, topResult, topicsResult, commentsResult] =
-        await Promise.all([
-          fetchXhsOverview(),
-          fetchXhsTopContent(),
-          fetchXhsHotTopics(),
-          fetchXhsCommentInsights(),
-        ]);
+      const [overviewResult, topResult, topicsResult, commentsResult] = await Promise.all([
+        fetchXhsOverview(),
+        fetchXhsTopContent(),
+        fetchXhsHotTopics(),
+        fetchXhsCommentInsights(),
+      ]);
       setOverview(overviewResult);
       setTopContent(topResult.items);
       setHotTopics(topicsResult.items);
@@ -165,33 +158,28 @@ export function XhsAnalyticsPage() {
     { label: "话题数", value: hotTopics.length, icon: <TagsOutlined /> },
   ];
 
-  const maxTopicEngagement = hotTopics.length > 0
-    ? Math.max(...hotTopics.map((t) => t.engagement))
-    : 1;
+  const maxTopicEngagement = hotTopics.length > 0 ? Math.max(...hotTopics.map((t) => t.engagement)) : 1;
 
   const termSizes = [18, 16, 15, 14, 13, 12];
 
   return (
     <div>
-      <Alert type="info" showIcon message="数据洞察模块正在开发优化中，当前为基础版本，更多分析维度即将上线。" style={{ marginBottom: 16 }} />
+      <Alert
+        type="info"
+        showIcon
+        message="数据洞察模块正在开发优化中，当前为基础版本，更多分析维度即将上线。"
+        style={{ marginBottom: 16 }}
+      />
       <PageHeader
         eyebrow="XHS Analytics"
         title="数据洞察"
         description="基于已保存笔记、标签和评论生成可执行的内容机会视图。"
         action={
           <Space>
-            <Button
-              icon={<DownloadOutlined />}
-              onClick={generateReport}
-              loading={isGeneratingReport}
-            >
+            <Button icon={<DownloadOutlined />} onClick={generateReport} loading={isGeneratingReport}>
               生成报告
             </Button>
-            <Button
-              icon={<ReloadOutlined />}
-              onClick={loadAnalytics}
-              loading={isLoading}
-            >
+            <Button icon={<ReloadOutlined />} onClick={loadAnalytics} loading={isLoading}>
               刷新
             </Button>
           </Space>
@@ -211,15 +199,9 @@ export function XhsAnalyticsPage() {
               }}
             >
               <Statistic
-                title={
-                  <span style={{ color: "#8c8c8c", fontSize: 13 }}>{metric.label}</span>
-                }
+                title={<span style={{ color: "#8c8c8c", fontSize: 13 }}>{metric.label}</span>}
                 value={metric.value}
-                prefix={
-                  <span style={{ color: metricIconColors[idx], marginRight: 4 }}>
-                    {metric.icon}
-                  </span>
-                }
+                prefix={<span style={{ color: metricIconColors[idx], marginRight: 4 }}>{metric.icon}</span>}
                 valueStyle={{ fontSize: 28, fontWeight: 600, color: "#e8e8e8" }}
               />
             </Card>
@@ -227,24 +209,8 @@ export function XhsAnalyticsPage() {
         ))}
       </Row>
 
-      {error && (
-        <Alert
-          type="error"
-          message={error}
-          showIcon
-          closable
-          style={{ marginBottom: 16 }}
-        />
-      )}
-      {reportMessage && (
-        <Alert
-          type="success"
-          message={reportMessage}
-          showIcon
-          closable
-          style={{ marginBottom: 16 }}
-        />
-      )}
+      {error && <Alert type="error" message={error} showIcon closable style={{ marginBottom: 16 }} />}
+      {reportMessage && <Alert type="success" message={reportMessage} showIcon closable style={{ marginBottom: 16 }} />}
 
       {isLoading ? (
         <div style={{ textAlign: "center", padding: 48 }}>
@@ -289,9 +255,7 @@ export function XhsAnalyticsPage() {
                       <span>热点话题</span>
                     </Space>
                   }
-                  extra={
-                    <Tag color="blue">{hotTopics.length} 个</Tag>
-                  }
+                  extra={<Tag color="blue">{hotTopics.length} 个</Tag>}
                   style={{ background: "#1f1f1f", borderColor: "#303030", flex: 1 }}
                   styles={{ body: { padding: "8px 16px", maxHeight: 320, overflowY: "auto" } }}
                 >
@@ -312,13 +276,7 @@ export function XhsAnalyticsPage() {
                                   {topic.notes} 篇 / {formatNumber(topic.engagement)} 互动
                                 </Text>
                               </div>
-                              <Progress
-                                percent={pct}
-                                showInfo={false}
-                                strokeColor="#1668dc"
-                                trailColor="#303030"
-                                size="small"
-                              />
+                              <Progress percent={pct} showInfo={false} strokeColor="#1668dc" trailColor="#303030" size="small" />
                             </div>
                           </List.Item>
                         );
@@ -383,9 +341,7 @@ export function XhsAnalyticsPage() {
                 <span>高赞评论</span>
               </Space>
             }
-            extra={
-              <Tag>{commentInsights.top_comments.length} 条</Tag>
-            }
+            extra={<Tag>{commentInsights.top_comments.length} 条</Tag>}
             style={{ background: "#1f1f1f", borderColor: "#303030" }}
             styles={{ body: { padding: "8px 16px" } }}
           >
@@ -396,16 +352,8 @@ export function XhsAnalyticsPage() {
               renderItem={(comment) => (
                 <List.Item style={{ padding: "10px 0", borderBottom: "1px solid #262626" }}>
                   <List.Item.Meta
-                    avatar={
-                      <Avatar
-                        size={36}
-                        icon={<UserOutlined />}
-                        style={{ backgroundColor: "#303030" }}
-                      />
-                    }
-                    title={
-                      <Text style={{ color: "#d9d9d9", fontSize: 13 }}>{comment.content}</Text>
-                    }
+                    avatar={<Avatar size={36} icon={<UserOutlined />} style={{ backgroundColor: "#303030" }} />}
+                    title={<Text style={{ color: "#d9d9d9", fontSize: 13 }}>{comment.content}</Text>}
                     description={
                       <Space size={16} style={{ marginTop: 2 }}>
                         <Text type="secondary" style={{ fontSize: 12 }}>

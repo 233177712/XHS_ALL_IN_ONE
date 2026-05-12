@@ -1,5 +1,5 @@
 import { LogoutOutlined } from "@ant-design/icons";
-import { Button, Space, Typography } from "antd";
+import { Button, Typography } from "antd";
 import { useEffect, useState } from "react";
 
 import { PlatformSelector } from "../../components/layout/platform-selector";
@@ -56,14 +56,9 @@ export function PlatformSelectPage() {
             <Title level={2} style={{ margin: "0 0 8px" }}>
               选择平台工作区
             </Title>
-            <Text type="secondary">
-              小红书已开放，其它平台保留扩展入口。
-            </Text>
+            <Text type="secondary">小红书已开放，其它平台保留扩展入口。</Text>
           </div>
-          <Button
-            icon={<LogoutOutlined />}
-            onClick={() => void auth.logout()}
-          >
+          <Button icon={<LogoutOutlined />} onClick={() => void auth.logout()}>
             退出登录
           </Button>
         </div>

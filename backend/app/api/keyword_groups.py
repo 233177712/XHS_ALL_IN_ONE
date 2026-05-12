@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from backend.app.core.database import get_db
 from backend.app.core.deps import get_current_user
 from backend.app.core.time import shanghai_now
-from backend.app.models import KeywordGroup, Note, PlatformAccount, User
+from backend.app.models import KeywordGroup, Note, User
 from backend.app.schemas.common import paginated
 
 router = APIRouter(prefix="/keyword-groups", tags=["keyword-groups"])
@@ -24,8 +24,8 @@ class KeywordGroupCreateRequest(BaseModel):
 
 
 class KeywordGroupUpdateRequest(BaseModel):
-    name: Optional[str] = Field(default=None, min_length=1, max_length=128)
-    keywords: Optional[list[str]] = Field(default=None, min_length=1, max_length=50)
+    name: str | None = Field(default=None, min_length=1, max_length=128)
+    keywords: list[str] | None = Field(default=None, min_length=1, max_length=50)
 
 
 def _normalize_keywords(keywords: list[str]) -> list[str]:
@@ -138,7 +138,7 @@ def _trend_summary(db: Session, current_user: User, group: KeywordGroup) -> dict
 
 @router.get("")
 def list_keyword_groups(
-    platform: Optional[str] = None,
+    platform: str | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     current_user: User = Depends(get_current_user),

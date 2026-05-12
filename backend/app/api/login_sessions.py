@@ -9,12 +9,12 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from backend.app.adapters.xhs.creator_login_adapter import XhsCreatorLoginAdapter
+from backend.app.adapters.xhs.pc_api_adapter import XhsPcApiAdapter
 from backend.app.adapters.xhs.pc_login_adapter import XhsPcLoginAdapter
 from backend.app.core.database import get_db
 from backend.app.core.deps import get_current_user
 from backend.app.core.security import decrypt_text, encrypt_text
 from backend.app.models import LoginSession, PlatformAccount, User
-from backend.app.adapters.xhs.pc_api_adapter import XhsPcApiAdapter
 from backend.app.services.account_service import (
     cookie_header_from_text,
     enrich_user_info_with_xhs_self_profile,

@@ -4,7 +4,7 @@ import csv
 import io
 import json
 from pathlib import Path
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -20,8 +20,8 @@ from backend.app.api.platforms.xhs.pc import (
 from backend.app.core.config import get_settings
 from backend.app.core.database import get_db
 from backend.app.core.deps import get_current_user
-from backend.app.core.time import shanghai_now
 from backend.app.core.security import decrypt_text
+from backend.app.core.time import shanghai_now
 from backend.app.models import AccountCookieVersion, AiDraft, Note, NoteAsset, NoteComment, PlatformAccount, Tag, User, note_tags
 from backend.app.schemas.common import paginated
 
@@ -210,7 +210,7 @@ def _get_unique_owned_notes(db: Session, current_user: User, note_ids: list[int]
 
 @router.get("/ids")
 def get_note_ids(
-    platform: Optional[str] = None,
+    platform: str | None = None,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -226,11 +226,11 @@ def get_note_ids(
 
 @router.get("")
 def get_notes(
-    platform: Optional[str] = None,
-    q: Optional[str] = None,
-    tag_id: Optional[int] = None,
-    has_assets: Optional[bool] = None,
-    has_comments: Optional[bool] = None,
+    platform: str | None = None,
+    q: str | None = None,
+    tag_id: int | None = None,
+    has_assets: bool | None = None,
+    has_comments: bool | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     current_user: User = Depends(get_current_user),

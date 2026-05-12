@@ -1,26 +1,5 @@
-import {
-  DeleteOutlined,
-  PlusOutlined,
-  ReloadOutlined,
-  SyncOutlined,
-} from "@ant-design/icons";
-import {
-  Alert,
-  Button,
-  Card,
-  Col,
-  Empty,
-  Form,
-  Input,
-  List,
-  Row,
-  Select,
-  Space,
-  Spin,
-  Statistic,
-  Tag,
-  Typography,
-} from "antd";
+import { DeleteOutlined, PlusOutlined, ReloadOutlined, SyncOutlined } from "@ant-design/icons";
+import { Alert, Button, Card, Col, Empty, Form, Input, List, Row, Select, Space, Spin, Statistic, Tag, Typography } from "antd";
 import { useEffect, useState } from "react";
 
 import { PageHeader } from "../../../components/layout/app-shell";
@@ -33,12 +12,7 @@ import {
   refreshMonitoringTarget,
 } from "../../../lib/api";
 import { formatShanghaiTime } from "../../../lib/time";
-import type {
-  MonitoringNote,
-  MonitoringSnapshot,
-  MonitoringTarget,
-  MonitoringTargetPayload,
-} from "../../../types";
+import type { MonitoringNote, MonitoringSnapshot, MonitoringTarget, MonitoringTargetPayload } from "../../../types";
 
 const { Text } = Typography;
 
@@ -60,24 +34,16 @@ function formatTime(value?: string | null): string {
   return formatShanghaiTime(value);
 }
 
-function snapshotMetric(
-  snapshot?: MonitoringSnapshot,
-  key?: "matched_count" | "total_engagement"
-): number {
+function snapshotMetric(snapshot?: MonitoringSnapshot, key?: "matched_count" | "total_engagement"): number {
   const value = key ? snapshot?.payload?.[key] : undefined;
   return typeof value === "number" ? value : 0;
 }
 
 export function XhsMonitoringPage() {
   const [targets, setTargets] = useState<MonitoringTarget[]>([]);
-  const [snapshotsByTarget, setSnapshotsByTarget] = useState<
-    Record<number, MonitoringSnapshot>
-  >({});
-  const [notesByTarget, setNotesByTarget] = useState<
-    Record<number, MonitoringNote[]>
-  >({});
-  const [targetType, setTargetType] =
-    useState<MonitoringTargetPayload["target_type"]>("keyword");
+  const [snapshotsByTarget, setSnapshotsByTarget] = useState<Record<number, MonitoringSnapshot>>({});
+  const [notesByTarget, setNotesByTarget] = useState<Record<number, MonitoringNote[]>>({});
+  const [targetType, setTargetType] = useState<MonitoringTargetPayload["target_type"]>("keyword");
   const [name, setName] = useState("");
   const [value, setValue] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -99,15 +65,10 @@ export function XhsMonitoringPage() {
           } catch {
             return [target.id, undefined] as const;
           }
-        })
+        }),
       );
       setSnapshotsByTarget(
-        Object.fromEntries(
-          snapshotResults.filter(
-            (entry): entry is readonly [number, MonitoringSnapshot] =>
-              Boolean(entry[1])
-          )
-        )
+        Object.fromEntries(snapshotResults.filter((entry): entry is readonly [number, MonitoringSnapshot] => Boolean(entry[1]))),
       );
       const noteResults = await Promise.all(
         result.items.map(async (target) => {
@@ -117,7 +78,7 @@ export function XhsMonitoringPage() {
           } catch {
             return [target.id, []] as const;
           }
-        })
+        }),
       );
       setNotesByTarget(Object.fromEntries(noteResults));
     } catch {
@@ -163,11 +124,7 @@ export function XhsMonitoringPage() {
     setMessage(null);
     try {
       const result = await refreshMonitoringTarget(targetId);
-      setTargets((currentTargets) =>
-        currentTargets.map((target) =>
-          target.id === result.target.id ? result.target : target
-        )
-      );
+      setTargets((currentTargets) => currentTargets.map((target) => (target.id === result.target.id ? result.target : target)));
       setSnapshotsByTarget((currentSnapshots) => ({
         ...currentSnapshots,
         [result.target.id]: result.snapshot,
@@ -190,9 +147,7 @@ export function XhsMonitoringPage() {
     setMessage(null);
     try {
       await deleteMonitoringTarget(targetId);
-      setTargets((currentTargets) =>
-        currentTargets.filter((target) => target.id !== targetId)
-      );
+      setTargets((currentTargets) => currentTargets.filter((target) => target.id !== targetId));
       setSnapshotsByTarget((currentSnapshots) => {
         const nextSnapshots = { ...currentSnapshots };
         delete nextSnapshots[targetId];
@@ -218,26 +173,18 @@ export function XhsMonitoringPage() {
         title="竞品监控"
         description="维护关键词、账号、品牌和笔记 URL 目标，后续可接入定时抓取和趋势快照。"
         action={
-          <Button
-            icon={<ReloadOutlined />}
-            onClick={loadTargets}
-            loading={isLoading}
-          >
+          <Button icon={<ReloadOutlined />} onClick={loadTargets} loading={isLoading}>
             刷新
           </Button>
         }
       />
 
-      <Card
-        style={{ background: "#1f1f1f", borderColor: "#303030", marginBottom: 24 }}
-      >
+      <Card style={{ background: "#1f1f1f", borderColor: "#303030", marginBottom: 24 }}>
         <Form layout="inline" style={{ flexWrap: "wrap", gap: 8 }}>
           <Form.Item>
             <Select
               value={targetType}
-              onChange={(val) =>
-                setTargetType(val as MonitoringTargetPayload["target_type"])
-              }
+              onChange={(val) => setTargetType(val as MonitoringTargetPayload["target_type"])}
               options={targetTypeOptions}
               disabled={isLoading}
               style={{ width: 120 }}
@@ -262,36 +209,15 @@ export function XhsMonitoringPage() {
             />
           </Form.Item>
           <Form.Item>
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={() => void createTarget()}
-              disabled={isWorking}
-            >
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => void createTarget()} disabled={isWorking}>
               添加目标
             </Button>
           </Form.Item>
         </Form>
       </Card>
 
-      {message && (
-        <Alert
-          type="info"
-          message={message}
-          showIcon
-          closable
-          style={{ marginBottom: 16 }}
-        />
-      )}
-      {error && (
-        <Alert
-          type="error"
-          message={error}
-          showIcon
-          closable
-          style={{ marginBottom: 16 }}
-        />
-      )}
+      {message && <Alert type="info" message={message} showIcon closable style={{ marginBottom: 16 }} />}
+      {error && <Alert type="error" message={error} showIcon closable style={{ marginBottom: 16 }} />}
 
       {isLoading ? (
         <div style={{ textAlign: "center", padding: 48 }}>
@@ -309,9 +235,7 @@ export function XhsMonitoringPage() {
                 title={
                   <Space>
                     <Text strong>{target.name || target.value}</Text>
-                    <Tag color={target.status === "active" ? "green" : "default"}>
-                      {target.status}
-                    </Tag>
+                    <Tag color={target.status === "active" ? "green" : "default"}>{target.status}</Tag>
                   </Space>
                 }
                 style={{ background: "#1f1f1f", borderColor: "#303030" }}
@@ -326,9 +250,7 @@ export function XhsMonitoringPage() {
                   <Text type="secondary" style={{ marginRight: 16 }}>
                     最近刷新：{formatTime(target.last_refreshed_at)}
                   </Text>
-                  <Text type="secondary">
-                    创建时间：{formatTime(target.created_at)}
-                  </Text>
+                  <Text type="secondary">创建时间：{formatTime(target.created_at)}</Text>
                 </div>
 
                 {snapshotsByTarget[target.id] && (
@@ -375,19 +297,10 @@ export function XhsMonitoringPage() {
                 ) : null}
 
                 <Space>
-                  <Button
-                    icon={<SyncOutlined />}
-                    onClick={() => void refreshTarget(target.id)}
-                    disabled={isWorking}
-                  >
+                  <Button icon={<SyncOutlined />} onClick={() => void refreshTarget(target.id)} disabled={isWorking}>
                     手动刷新
                   </Button>
-                  <Button
-                    icon={<DeleteOutlined />}
-                    danger
-                    onClick={() => void removeTarget(target.id)}
-                    disabled={isWorking}
-                  >
+                  <Button icon={<DeleteOutlined />} danger onClick={() => void removeTarget(target.id)} disabled={isWorking}>
                     删除
                   </Button>
                 </Space>

@@ -57,21 +57,11 @@ export function AddAccountDrawer({ open, onClose, onBound }: AddAccountDrawerPro
       }}
     >
       <div style={{ marginBottom: 20 }}>
-        <Segmented
-          block
-          value={accountType}
-          options={accountTypeOptions}
-          onChange={(val) => setAccountType(val as AccountType)}
-        />
+        <Segmented block value={accountType} options={accountTypeOptions} onChange={(val) => setAccountType(val as AccountType)} />
       </div>
 
       <div style={{ marginBottom: 24 }}>
-        <Segmented
-          block
-          value={method}
-          options={loginMethodOptions}
-          onChange={(val) => setMethod(val as LoginMethod)}
-        />
+        <Segmented block value={method} options={loginMethodOptions} onChange={(val) => setMethod(val as LoginMethod)} />
       </div>
 
       {method === "qr" ? (

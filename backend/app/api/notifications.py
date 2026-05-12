@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Optional
-
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -30,7 +28,7 @@ def serialize_notification(n: Notification) -> dict:
 
 @router.get("")
 def list_notifications(
-    unread: Optional[bool] = None,
+    unread: bool | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     current_user: User = Depends(get_current_user),
@@ -38,7 +36,7 @@ def list_notifications(
 ):
     stmt = select(Notification).where(Notification.user_id == current_user.id)
     if unread is True:
-        stmt = stmt.where(Notification.read == False)
+        stmt = stmt.where(Notification.read.is_(False))
     items = db.scalars(stmt.order_by(Notification.created_at.desc())).all()
     return paginated([serialize_notification(n) for n in items], page, page_size)
 
@@ -64,7 +62,7 @@ def mark_all_read(
     db: Session = Depends(get_db),
 ):
     unread = db.scalars(
-        select(Notification).where(Notification.user_id == current_user.id, Notification.read == False)
+        select(Notification).where(Notification.user_id == current_user.id, Notification.read.is_(False))
     ).all()
     for n in unread:
         n.read = True

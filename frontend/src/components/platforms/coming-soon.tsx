@@ -44,10 +44,7 @@ export function ComingSoonPage() {
         title={`${platform.name_cn} 工作区即将开放`}
         subTitle={`${platform.name_en} 已进入平台注册表。`}
         extra={
-          <Button
-            icon={<ArrowLeftOutlined />}
-            onClick={() => navigate("/platform-select")}
-          >
+          <Button icon={<ArrowLeftOutlined />} onClick={() => navigate("/platform-select")}>
             返回平台选择
           </Button>
         }

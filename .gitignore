@@ -33,7 +33,6 @@ venv.bak/
 .env
 .claude
 CLAUDE.md
-AGENTS.md
 .agent
 .idea
 .superpowers

@@ -1,36 +1,9 @@
-import {
-  DeleteOutlined,
-  EditOutlined,
-  PlusOutlined,
-  ReloadOutlined,
-  SaveOutlined,
-} from "@ant-design/icons";
-import {
-  Alert,
-  Button,
-  Card,
-  Col,
-  Empty,
-  Form,
-  Input,
-  List,
-  Row,
-  Space,
-  Spin,
-  Statistic,
-  Tag,
-  Typography,
-} from "antd";
+import { DeleteOutlined, EditOutlined, PlusOutlined, ReloadOutlined, SaveOutlined } from "@ant-design/icons";
+import { Alert, Button, Card, Col, Empty, Form, Input, List, Row, Space, Spin, Statistic, Tag, Typography } from "antd";
 import { useEffect, useState } from "react";
 
 import { PageHeader } from "../../../components/layout/app-shell";
-import {
-  createKeywordGroup,
-  deleteKeywordGroup,
-  fetchKeywordGroup,
-  fetchKeywordGroups,
-  updateKeywordGroup,
-} from "../../../lib/api";
+import { createKeywordGroup, deleteKeywordGroup, fetchKeywordGroup, fetchKeywordGroups, updateKeywordGroup } from "../../../lib/api";
 import type { KeywordGroup, KeywordGroupDetail } from "../../../types";
 
 const { Text } = Typography;
@@ -48,9 +21,7 @@ function joinKeywords(keywords: string[]): string {
 
 export function XhsKeywordsPage() {
   const [groups, setGroups] = useState<KeywordGroup[]>([]);
-  const [detailsByGroup, setDetailsByGroup] = useState<
-    Record<number, KeywordGroupDetail>
-  >({});
+  const [detailsByGroup, setDetailsByGroup] = useState<Record<number, KeywordGroupDetail>>({});
   const [name, setName] = useState("");
   const [keywords, setKeywords] = useState("");
   const [editingGroupId, setEditingGroupId] = useState<number | null>(null);
@@ -72,16 +43,9 @@ export function XhsKeywordsPage() {
           } catch {
             return [group.id, undefined] as const;
           }
-        })
+        }),
       );
-      setDetailsByGroup(
-        Object.fromEntries(
-          details.filter(
-            (entry): entry is readonly [number, KeywordGroupDetail] =>
-              Boolean(entry[1])
-          )
-        )
-      );
+      setDetailsByGroup(Object.fromEntries(details.filter((entry): entry is readonly [number, KeywordGroupDetail] => Boolean(entry[1]))));
     } catch {
       setError("关键词组加载失败。");
     } finally {
@@ -119,11 +83,7 @@ export function XhsKeywordsPage() {
           name: name.trim(),
           keywords: nextKeywords,
         });
-        setGroups((currentGroups) =>
-          currentGroups.map((group) =>
-            group.id === updated.id ? updated : group
-          )
-        );
+        setGroups((currentGroups) => currentGroups.map((group) => (group.id === updated.id ? updated : group)));
         const detail = await fetchKeywordGroup(updated.id);
         setDetailsByGroup((currentDetails) => ({
           ...currentDetails,
@@ -157,9 +117,7 @@ export function XhsKeywordsPage() {
     setMessage(null);
     try {
       await deleteKeywordGroup(groupId);
-      setGroups((currentGroups) =>
-        currentGroups.filter((group) => group.id !== groupId)
-      );
+      setGroups((currentGroups) => currentGroups.filter((group) => group.id !== groupId));
       setDetailsByGroup((currentDetails) => {
         const nextDetails = { ...currentDetails };
         delete nextDetails[groupId];
@@ -183,19 +141,13 @@ export function XhsKeywordsPage() {
         title="关键词组"
         description="维护选题、赛道和品牌关键词组，从已保存笔记中观察命中量和互动机会。"
         action={
-          <Button
-            icon={<ReloadOutlined />}
-            disabled={isLoading}
-            onClick={loadGroups}
-          >
+          <Button icon={<ReloadOutlined />} disabled={isLoading} onClick={loadGroups}>
             刷新
           </Button>
         }
       />
 
-      <Card
-        style={{ background: "#1f1f1f", borderColor: "#303030", marginBottom: 24 }}
-      >
+      <Card style={{ background: "#1f1f1f", borderColor: "#303030", marginBottom: 24 }}>
         <Form layout="inline" style={{ flexWrap: "wrap", gap: 8 }}>
           <Form.Item>
             <Input
@@ -236,24 +188,8 @@ export function XhsKeywordsPage() {
         </Form>
       </Card>
 
-      {message && (
-        <Alert
-          type="info"
-          message={message}
-          showIcon
-          closable
-          style={{ marginBottom: 16 }}
-        />
-      )}
-      {error && (
-        <Alert
-          type="error"
-          message={error}
-          showIcon
-          closable
-          style={{ marginBottom: 16 }}
-        />
-      )}
+      {message && <Alert type="info" message={message} showIcon closable style={{ marginBottom: 16 }} />}
+      {error && <Alert type="error" message={error} showIcon closable style={{ marginBottom: 16 }} />}
 
       {isLoading ? (
         <div style={{ textAlign: "center", padding: 48 }}>
@@ -284,27 +220,13 @@ export function XhsKeywordsPage() {
 
                   <Row gutter={16} style={{ marginBottom: 16 }}>
                     <Col span={8}>
-                      <Statistic
-                        title="命中"
-                        value={detail?.trend.total_matches ?? 0}
-                        suffix="条"
-                        valueStyle={{ fontSize: 16 }}
-                      />
+                      <Statistic title="命中" value={detail?.trend.total_matches ?? 0} suffix="条" valueStyle={{ fontSize: 16 }} />
                     </Col>
                     <Col span={8}>
-                      <Statistic
-                        title="互动"
-                        value={detail?.trend.total_engagement ?? 0}
-                        valueStyle={{ fontSize: 16 }}
-                      />
+                      <Statistic title="互动" value={detail?.trend.total_engagement ?? 0} valueStyle={{ fontSize: 16 }} />
                     </Col>
                     <Col span={8}>
-                      <Statistic
-                        title="关键词"
-                        value={group.keywords.length}
-                        suffix="个"
-                        valueStyle={{ fontSize: 16 }}
-                      />
+                      <Statistic title="关键词" value={group.keywords.length} suffix="个" valueStyle={{ fontSize: 16 }} />
                     </Col>
                   </Row>
 
@@ -342,19 +264,10 @@ export function XhsKeywordsPage() {
                   ) : null}
 
                   <Space>
-                    <Button
-                      icon={<EditOutlined />}
-                      disabled={isWorking}
-                      onClick={() => editGroup(group)}
-                    >
+                    <Button icon={<EditOutlined />} disabled={isWorking} onClick={() => editGroup(group)}>
                       编辑
                     </Button>
-                    <Button
-                      icon={<DeleteOutlined />}
-                      danger
-                      disabled={isWorking}
-                      onClick={() => removeGroup(group.id)}
-                    >
+                    <Button icon={<DeleteOutlined />} danger disabled={isWorking} onClick={() => removeGroup(group.id)}>
                       删除
                     </Button>
                   </Space>

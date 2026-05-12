@@ -31,11 +31,16 @@ body {
 }
 
 /* ===== Hover & transition effects only ===== */
+
 /* These use CSS transition (not animation) so they only trigger on   */
+
 /* hover/focus, never on React re-render.                             */
 
 .ant-card {
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .ant-card:hover {
@@ -44,7 +49,7 @@ body {
 
 .ant-card-hoverable:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(22, 104, 220, 0.12);
+  box-shadow: 0 8px 24px rgb(22 104 220 / 12%);
   border-color: #1668dc60;
 }
 
@@ -57,7 +62,9 @@ body {
 }
 
 .ant-tag {
-  transition: transform 0.15s ease, opacity 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    opacity 0.15s ease;
 }
 
 .ant-tag:hover {
@@ -73,11 +80,13 @@ body {
 }
 
 .ant-btn-primary:not(:disabled):hover {
-  box-shadow: 0 4px 12px rgba(22, 104, 220, 0.3);
+  box-shadow: 0 4px 12px rgb(22 104 220 / 30%);
 }
 
 .ant-menu-item {
-  transition: background 0.2s ease, color 0.15s ease;
+  transition:
+    background 0.2s ease,
+    color 0.15s ease;
 }
 
 .ant-segmented-item {

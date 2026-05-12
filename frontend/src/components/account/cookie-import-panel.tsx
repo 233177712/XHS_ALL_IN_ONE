@@ -28,7 +28,7 @@ export function CookieImportPanel({ accountType, onImported }: CookieImportPanel
       const account = await importXhsCookieAccount({
         sub_type: accountType,
         cookie_string: cookieString.trim(),
-        sync_creator: accountType === "pc" ? syncCreator : undefined
+        sync_creator: accountType === "pc" ? syncCreator : undefined,
       });
       onImported(account);
       setCookieString("");
@@ -65,13 +65,7 @@ export function CookieImportPanel({ accountType, onImported }: CookieImportPanel
 
       {error ? <Alert type="error" message={error} showIcon /> : null}
 
-      <Button
-        type="primary"
-        block
-        icon={<ImportOutlined />}
-        onClick={handleImport}
-        loading={isSubmitting}
-      >
+      <Button type="primary" block icon={<ImportOutlined />} onClick={handleImport} loading={isSubmitting}>
         {isSubmitting ? "校验中..." : "校验并导入"}
       </Button>
     </Space>

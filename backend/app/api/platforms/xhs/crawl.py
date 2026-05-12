@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-from calendar import monthrange
-from datetime import datetime
 import json
 import time
-from typing import Any, Generator, Literal
+from calendar import monthrange
+from collections.abc import Generator
+from datetime import datetime
+from typing import Any, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
@@ -17,8 +18,8 @@ from backend.app.api.platforms.xhs.pc import (
     _get_owned_pc_account_cookies,
     _normalize_detail_payload,
     _normalize_search_item,
-    normalize_comment_payload,
     get_xhs_pc_api_adapter_factory,
+    normalize_comment_payload,
 )
 from backend.app.api.tasks import serialize_task
 from backend.app.core.database import get_db

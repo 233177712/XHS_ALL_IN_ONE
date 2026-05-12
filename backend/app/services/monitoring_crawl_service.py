@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -164,7 +165,6 @@ def _snapshot_from_note_url(normalized_items: list[dict[str, Any]]) -> dict[str,
 
 
 def _check_viral_potential(db: Session, target: MonitoringTarget) -> dict[str, Any]:
-    from datetime import timezone
     config = target.config or {}
     threshold = float(config.get("viral_threshold", 10))
     snapshots = db.scalars(
@@ -200,7 +200,7 @@ def execute_monitoring_refresh(
     adapter_factory: Callable[[str], XhsPcApiAdapter] | None = None,
     check_rate_limit: bool = True,
 ) -> dict[str, Any]:
-    from backend.app.api.platforms.xhs.monitoring import _serialize_target, _serialize_snapshot
+    from backend.app.api.platforms.xhs.monitoring import _serialize_snapshot, _serialize_target
     from backend.app.api.tasks import serialize_task
 
     now = shanghai_now()
@@ -274,9 +274,8 @@ def execute_monitoring_refresh(
     is_note_url = target.target_type == "note_url"
     is_benchmark = is_note_url and target_config.get("benchmark_source")
 
-    if ok and normalized_items:
-        if not is_benchmark:
-            _save_normalized_notes(db, account, normalized_items)
+    if ok and normalized_items and not is_benchmark:
+        _save_normalized_notes(db, account, normalized_items)
 
     if is_note_url and ok and normalized_items:
         snapshot_payload = _snapshot_from_note_url(normalized_items)

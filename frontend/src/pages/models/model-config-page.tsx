@@ -10,23 +10,7 @@ import {
   RobotOutlined,
   StarOutlined,
 } from "@ant-design/icons";
-import {
-  Alert,
-  Button,
-  Card,
-  Checkbox,
-  Col,
-  Empty,
-  Form,
-  Input,
-  Popconfirm,
-  Row,
-  Segmented,
-  Space,
-  Spin,
-  Tag,
-  Typography,
-} from "antd";
+import { Alert, Button, Card, Checkbox, Col, Empty, Form, Input, Popconfirm, Row, Segmented, Space, Spin, Tag, Typography } from "antd";
 import type { FormEvent } from "react";
 import { useEffect, useMemo, useState } from "react";
 
@@ -83,7 +67,7 @@ export function ModelConfigPage() {
       text: configs.filter((config) => config.model_type === "text"),
       image: configs.filter((config) => config.model_type === "image"),
     }),
-    [configs]
+    [configs],
   );
 
   async function loadConfigs() {
@@ -120,14 +104,18 @@ export function ModelConfigPage() {
     try {
       if (editingId) {
         const updated = await updateModelConfig(editingId, payload);
-        setConfigs((current) => current.map((c) => c.id === updated.id ? updated : (updated.is_default && c.model_type === updated.model_type ? { ...c, is_default: false } : c)));
+        setConfigs((current) =>
+          current.map((c) =>
+            c.id === updated.id ? updated : updated.is_default && c.model_type === updated.model_type ? { ...c, is_default: false } : c,
+          ),
+        );
         setMessage(`${typeLabel(updated.model_type)}配置已更新。`);
         setEditingId(null);
       } else {
         const created = await createModelConfig(payload);
         setConfigs((current) => {
           const withoutOldDefault = created.is_default
-            ? current.map((config) => config.model_type === created.model_type ? { ...config, is_default: false } : config)
+            ? current.map((config) => (config.model_type === created.model_type ? { ...config, is_default: false } : config))
             : current;
           return [created, ...withoutOldDefault];
         });
@@ -167,7 +155,10 @@ export function ModelConfigPage() {
     try {
       await deleteModelConfig(configId);
       setConfigs((current) => current.filter((c) => c.id !== configId));
-      if (editingId === configId) { setEditingId(null); setForm({ ...emptyForm, model_type: form.model_type }); }
+      if (editingId === configId) {
+        setEditingId(null);
+        setForm({ ...emptyForm, model_type: form.model_type });
+      }
       setMessage("配置已删除。");
     } catch {
       setError("配置删除失败。");
@@ -192,15 +183,9 @@ export function ModelConfigPage() {
     try {
       const updated = await setDefaultModelConfig(config.id);
       setConfigs((current) =>
-        current.map((item) =>
-          item.model_type === updated.model_type
-            ? { ...item, is_default: item.id === updated.id }
-            : item
-        )
+        current.map((item) => (item.model_type === updated.model_type ? { ...item, is_default: item.id === updated.id } : item)),
       );
-      setMessage(
-        `${updated.name} 已设为默认${typeLabel(updated.model_type)}。`
-      );
+      setMessage(`${updated.name} 已设为默认${typeLabel(updated.model_type)}。`);
     } catch {
       setError("默认模型切换失败。");
     }
@@ -217,11 +202,7 @@ export function ModelConfigPage() {
         title="模型配置"
         description="为改写、生成、封面和图片处理配置用户级文本与图片模型，后续 AI 任务会从默认配置解析调用参数。"
         action={
-          <Button
-            icon={<ReloadOutlined />}
-            onClick={loadConfigs}
-            loading={isLoading}
-          >
+          <Button icon={<ReloadOutlined />} onClick={loadConfigs} loading={isLoading}>
             刷新
           </Button>
         }
@@ -232,31 +213,28 @@ export function ModelConfigPage() {
         showIcon
         style={{ marginBottom: 16 }}
         message="推荐的 OpenAI 兼容 API 服务"
-        description={<>
-          <Typography.Link href="https://api.openai-next.com/" target="_blank" rel="noreferrer">api.openai-next.com</Typography.Link> — OpenAI 中转，Base URL: <Typography.Text code>https://api.openai-next.com/v1</Typography.Text><br />
-          <Typography.Link href="https://www.volcengine.com/product/doubao" target="_blank" rel="noreferrer">火山引擎（豆包）</Typography.Link> — 字节跳动大模型平台，Base URL: <Typography.Text code>https://ark.cn-beijing.volces.com/api/v3</Typography.Text><br />
-          <Typography.Link href="https://bailian.console.aliyun.com/" target="_blank" rel="noreferrer">阿里云百炼</Typography.Link> — 通义千问系列，Base URL: <Typography.Text code>https://dashscope.aliyuncs.com/compatible-mode/v1</Typography.Text>
-        </>}
+        description={
+          <>
+            <Typography.Link href="https://api.openai-next.com/" target="_blank" rel="noreferrer">
+              api.openai-next.com
+            </Typography.Link>{" "}
+            — OpenAI 中转，Base URL: <Typography.Text code>https://api.openai-next.com/v1</Typography.Text>
+            <br />
+            <Typography.Link href="https://www.volcengine.com/product/doubao" target="_blank" rel="noreferrer">
+              火山引擎（豆包）
+            </Typography.Link>{" "}
+            — 字节跳动大模型平台，Base URL: <Typography.Text code>https://ark.cn-beijing.volces.com/api/v3</Typography.Text>
+            <br />
+            <Typography.Link href="https://bailian.console.aliyun.com/" target="_blank" rel="noreferrer">
+              阿里云百炼
+            </Typography.Link>{" "}
+            — 通义千问系列，Base URL: <Typography.Text code>https://dashscope.aliyuncs.com/compatible-mode/v1</Typography.Text>
+          </>
+        }
       />
 
-      {error && (
-        <Alert
-          type="error"
-          message={error}
-          showIcon
-          closable
-          style={{ marginBottom: 16 }}
-        />
-      )}
-      {message && (
-        <Alert
-          type="success"
-          message={message}
-          showIcon
-          closable
-          style={{ marginBottom: 16 }}
-        />
-      )}
+      {error && <Alert type="error" message={error} showIcon closable style={{ marginBottom: 16 }} />}
+      {message && <Alert type="success" message={message} showIcon closable style={{ marginBottom: 16 }} />}
 
       <Row gutter={[24, 24]}>
         <Col xs={24} lg={8}>
@@ -267,7 +245,13 @@ export function ModelConfigPage() {
                 <span>{editingId ? "编辑模型" : "新增模型"}</span>
               </Space>
             }
-            extra={editingId ? <Button size="small" onClick={handleCancelEdit}>取消编辑</Button> : undefined}
+            extra={
+              editingId ? (
+                <Button size="small" onClick={handleCancelEdit}>
+                  取消编辑
+                </Button>
+              ) : undefined
+            }
             style={cardStyle}
           >
             <Segmented
@@ -311,9 +295,7 @@ export function ModelConfigPage() {
                         model_name: e.target.value,
                       }))
                     }
-                    placeholder={
-                      form.model_type === "text" ? "gpt-4o-mini" : "gpt-image-1"
-                    }
+                    placeholder={form.model_type === "text" ? "gpt-4o-mini" : "gpt-image-1"}
                   />
                 </Form.Item>
                 <Form.Item label="Base URL">
@@ -353,13 +335,7 @@ export function ModelConfigPage() {
                     设为该类型默认模型
                   </Checkbox>
                 </Form.Item>
-                <Button
-                  type="primary"
-                  htmlType="submit"
-                  icon={<KeyOutlined />}
-                  loading={isSaving}
-                  block
-                >
+                <Button type="primary" htmlType="submit" icon={<KeyOutlined />} loading={isSaving} block>
                   {isSaving ? "保存中..." : editingId ? "更新配置" : "保存配置"}
                 </Button>
               </Form>
@@ -386,25 +362,17 @@ export function ModelConfigPage() {
                     </div>
                   ) : grouped[type].length === 0 ? (
                     <Empty
-                      image={
-                        <ModelTypeIcon type={type} />
-                      }
+                      image={<ModelTypeIcon type={type} />}
                       description={
                         <div>
                           <Text strong>暂无{typeLabel(type)}</Text>
                           <br />
-                          <Text type="secondary">
-                            保存一个配置后，AI 改写和生成流程就能读取默认模型。
-                          </Text>
+                          <Text type="secondary">保存一个配置后，AI 改写和生成流程就能读取默认模型。</Text>
                         </div>
                       }
                     />
                   ) : (
-                    <Space
-                      direction="vertical"
-                      style={{ width: "100%" }}
-                      size="middle"
-                    >
+                    <Space direction="vertical" style={{ width: "100%" }} size="middle">
                       {grouped[type].map((config) => (
                         <Card
                           key={config.id}
@@ -422,10 +390,7 @@ export function ModelConfigPage() {
                           >
                             <Text strong>{config.name}</Text>
                             {config.is_default && (
-                              <Tag
-                                icon={<StarOutlined />}
-                                color="blue"
-                              >
+                              <Tag icon={<StarOutlined />} color="blue">
                                 默认
                               </Tag>
                             )}
@@ -439,19 +404,11 @@ export function ModelConfigPage() {
                               marginBottom: 8,
                             }}
                           >
-                            <Text
-                              type="secondary"
-                              style={{ fontSize: 12, marginRight: 12 }}
-                            >
+                            <Text type="secondary" style={{ fontSize: 12, marginRight: 12 }}>
                               {config.base_url || "未配置 Base URL"}
                             </Text>
-                            <Text
-                              type="secondary"
-                              style={{ fontSize: 12 }}
-                            >
-                              {config.has_api_key
-                                ? "已保存 API Key"
-                                : "未保存 API Key"}
+                            <Text type="secondary" style={{ fontSize: 12 }}>
+                              {config.has_api_key ? "已保存 API Key" : "未保存 API Key"}
                             </Text>
                           </div>
                           <Space size={4} wrap>
@@ -471,15 +428,13 @@ export function ModelConfigPage() {
                             >
                               检查
                             </Button>
-                            <Button
-                              size="small"
-                              icon={<EditOutlined />}
-                              onClick={() => handleEdit(config)}
-                            >
+                            <Button size="small" icon={<EditOutlined />} onClick={() => handleEdit(config)}>
                               编辑
                             </Button>
                             <Popconfirm title="确定删除此模型配置？" onConfirm={() => void handleDelete(config.id)}>
-                              <Button size="small" danger icon={<DeleteOutlined />}>删除</Button>
+                              <Button size="small" danger icon={<DeleteOutlined />}>
+                                删除
+                              </Button>
                             </Popconfirm>
                           </Space>
                           {testResults[config.id] && (
@@ -487,7 +442,9 @@ export function ModelConfigPage() {
                               <Tag color={testResults[config.id].status === "ok" ? "success" : "error"}>
                                 {testResults[config.id].status === "ok" ? "连接正常" : "连接失败"}
                               </Tag>
-                              <Text type="secondary" style={{ fontSize: 11 }}>{testResults[config.id].message}</Text>
+                              <Text type="secondary" style={{ fontSize: 11 }}>
+                                {testResults[config.id].message}
+                              </Text>
                             </div>
                           )}
                         </Card>

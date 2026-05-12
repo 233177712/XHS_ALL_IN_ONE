@@ -40,11 +40,5 @@ export function XhsSectionPage() {
   const { section = "discovery" } = useParams();
   const info = sectionInfo[section] ?? sectionInfo.discovery;
 
-  return (
-    <Result
-      status="info"
-      title={info.title}
-      subTitle={info.description}
-    />
-  );
+  return <Result status="info" title={info.title} subTitle={info.description} />;
 }

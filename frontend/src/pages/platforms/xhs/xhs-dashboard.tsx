@@ -62,11 +62,7 @@ export function XhsDashboard() {
         {metrics.map((metric) => (
           <Col xs={12} sm={12} md={6} key={metric.label}>
             <Card size="small" style={{ background: "#1f1f1f", borderColor: "#303030" }}>
-              <Statistic
-                title={metric.label}
-                value={metric.value}
-                prefix={metric.icon}
-              />
+              <Statistic title={metric.label} value={metric.value} prefix={metric.icon} />
             </Card>
           </Col>
         ))}
@@ -85,13 +81,8 @@ export function XhsDashboard() {
               <List
                 dataSource={overview.hot_topics}
                 renderItem={(topic) => (
-                  <List.Item
-                    extra={<Text strong>{topic.engagement.toLocaleString()}</Text>}
-                  >
-                    <List.Item.Meta
-                      title={topic.keyword}
-                      description={`${topic.notes} 篇笔记`}
-                    />
+                  <List.Item extra={<Text strong>{topic.engagement.toLocaleString()}</Text>}>
+                    <List.Item.Meta title={topic.keyword} description={`${topic.notes} 篇笔记`} />
                   </List.Item>
                 )}
               />
@@ -99,11 +90,7 @@ export function XhsDashboard() {
           </Card>
         </Col>
         <Col xs={24} md={8}>
-          <Card
-            title="自动化结果"
-            extra={<RobotOutlined />}
-            style={{ background: "#1f1f1f", borderColor: "#303030" }}
-          >
+          <Card title="自动化结果" extra={<RobotOutlined />} style={{ background: "#1f1f1f", borderColor: "#303030" }}>
             {overview.recent_activity.length === 0 ? (
               <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无最近活动" />
             ) : (
@@ -111,10 +98,7 @@ export function XhsDashboard() {
                 dataSource={overview.recent_activity}
                 renderItem={(item) => (
                   <List.Item>
-                    <List.Item.Meta
-                      title={item.title}
-                      description={item.status}
-                    />
+                    <List.Item.Meta title={item.title} description={item.status} />
                   </List.Item>
                 )}
               />

@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Optional
-
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 from sqlalchemy import delete, select
@@ -21,8 +19,8 @@ class TagCreateRequest(BaseModel):
 
 
 class TagUpdateRequest(BaseModel):
-    name: Optional[str] = Field(default=None, min_length=1, max_length=64)
-    color: Optional[str] = Field(default=None, max_length=24)
+    name: str | None = Field(default=None, min_length=1, max_length=64)
+    color: str | None = Field(default=None, max_length=24)
 
 
 def serialize_tag(tag: Tag) -> dict:
@@ -44,7 +42,7 @@ def _get_owned_tag(db: Session, current_user: User, tag_id: int) -> Tag:
     return tag
 
 
-def _ensure_unique_name(db: Session, current_user: User, name: str, exclude_tag_id: Optional[int] = None) -> None:
+def _ensure_unique_name(db: Session, current_user: User, name: str, exclude_tag_id: int | None = None) -> None:
     statement = select(Tag).where(Tag.user_id == current_user.id, Tag.name == name)
     if exclude_tag_id is not None:
         statement = statement.where(Tag.id != exclude_tag_id)

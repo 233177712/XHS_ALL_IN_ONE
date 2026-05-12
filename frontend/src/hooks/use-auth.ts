@@ -15,7 +15,7 @@ type AuthSnapshot = {
 let snapshot: AuthSnapshot = {
   status: api.hasRefreshToken() ? "checking" : "anonymous",
   user: null,
-  error: null
+  error: null,
 };
 
 let bootstrapped = false;
@@ -115,6 +115,6 @@ export function useAuth() {
     isChecking: current.status === "checking",
     login,
     register,
-    logout
+    logout,
   };
 }

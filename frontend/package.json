@@ -6,7 +6,13 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "lint": "eslint src/ --max-warnings 0",
+    "lint:fix": "eslint src/ --fix",
+    "format": "prettier --write src/",
+    "format:check": "prettier --check src/",
+    "stylelint": "stylelint \"src/**/*.css\"",
+    "prepare": "husky"
   },
   "dependencies": {
     "@ant-design/icons": "^6.2.2",
@@ -16,6 +22,7 @@
     "@vitejs/plugin-react": "^5.1.2",
     "antd": "^6.3.7",
     "axios": "^1.13.2",
+    "eslint-plugin-react-hooks": "^5.2.0",
     "keepalive-for-react": "^5.0.11",
     "keepalive-for-react-router": "^5.0.7",
     "lucide-react": "^0.562.0",
@@ -26,9 +33,31 @@
     "vite": "^7.3.0",
     "zod": "^4.2.1"
   },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --max-warnings 0",
+      "prettier --write"
+    ],
+    "*.css": [
+      "stylelint --fix",
+      "prettier --write"
+    ],
+    "*.json": [
+      "prettier --write"
+    ]
+  },
   "devDependencies": {
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "@typescript-eslint/eslint-plugin": "^7.18.0",
+    "@typescript-eslint/parser": "^7.18.0",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^10.1.8",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.0.4",
+    "prettier": "^3.8.3",
+    "stylelint": "^17.11.0",
+    "stylelint-config-standard": "^40.0.0",
     "typescript": "^5.9.3"
   }
 }

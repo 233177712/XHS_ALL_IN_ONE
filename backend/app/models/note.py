@@ -1,14 +1,12 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Optional
 
-from sqlalchemy import DateTime, ForeignKey, Integer, JSON, String, Table, Text, Column
+from sqlalchemy import JSON, Column, DateTime, ForeignKey, Integer, String, Table, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from backend.app.core.database import Base
 from backend.app.core.time import shanghai_now
-
 
 note_tags = Table(
     "note_tags",
@@ -29,7 +27,7 @@ class Note(Base):
     title: Mapped[str] = mapped_column(String(512), default="")
     content: Mapped[str] = mapped_column(Text, default="")
     author_name: Mapped[str] = mapped_column(String(128), default="")
-    raw_json: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+    raw_json: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=shanghai_now)
 
 
@@ -51,12 +49,12 @@ class NoteComment(Base):
     note_id: Mapped[int] = mapped_column(ForeignKey("notes.id"), index=True)
     comment_id: Mapped[str] = mapped_column(String(128), index=True)
     user_name: Mapped[str] = mapped_column(String(128), default="")
-    user_id: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
+    user_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
     content: Mapped[str] = mapped_column(Text, default="")
     like_count: Mapped[int] = mapped_column(Integer, default=0)
-    parent_comment_id: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
-    created_at_remote: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
-    raw_json: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+    parent_comment_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    created_at_remote: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    raw_json: Mapped[dict | None] = mapped_column(JSON, nullable=True)
 
 
 class Tag(Base):

@@ -98,7 +98,17 @@ function filenameFromUrl(url: string): string {
 
 /* ── sortable image thumbnail ─────────────────────────────────────── */
 
-function SortableImageThumb({ asset, onEdit, onRemove, onView }: { asset: DraftAsset; onEdit: () => void; onRemove: () => void; onView: () => void }) {
+function SortableImageThumb({
+  asset,
+  onEdit,
+  onRemove,
+  onView,
+}: {
+  asset: DraftAsset;
+  onEdit: () => void;
+  onRemove: () => void;
+  onView: () => void;
+}) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: asset.id });
   const style: React.CSSProperties = {
     position: "relative",
@@ -119,35 +129,71 @@ function SortableImageThumb({ asset, onEdit, onRemove, onView }: { asset: DraftA
         referrerPolicy="no-referrer"
       />
       <Button
-        type="text" size="small" icon={<EditOutlined />}
-        onClick={(e) => { e.stopPropagation(); onEdit(); }}
+        type="text"
+        size="small"
+        icon={<EditOutlined />}
+        onClick={(e) => {
+          e.stopPropagation();
+          onEdit();
+        }}
         onPointerDown={(e) => e.stopPropagation()}
         style={{
-          position: "absolute", top: -6, left: -6, fontSize: 10,
-          width: 18, height: 18, minWidth: 18, padding: 0,
-          background: "rgba(0,0,0,.6)", borderRadius: "50%", color: "#1668dc",
+          position: "absolute",
+          top: -6,
+          left: -6,
+          fontSize: 10,
+          width: 18,
+          height: 18,
+          minWidth: 18,
+          padding: 0,
+          background: "rgba(0,0,0,.6)",
+          borderRadius: "50%",
+          color: "#1668dc",
         }}
       />
       <Popconfirm title="移除此图片？" onConfirm={onRemove}>
         <Button
-          type="text" danger size="small" icon={<DeleteOutlined />}
+          type="text"
+          danger
+          size="small"
+          icon={<DeleteOutlined />}
           onClick={(e) => e.stopPropagation()}
           onPointerDown={(e) => e.stopPropagation()}
           style={{
-            position: "absolute", top: -6, right: -6, fontSize: 10,
-            width: 18, height: 18, minWidth: 18, padding: 0,
-            background: "rgba(0,0,0,.6)", borderRadius: "50%",
+            position: "absolute",
+            top: -6,
+            right: -6,
+            fontSize: 10,
+            width: 18,
+            height: 18,
+            minWidth: 18,
+            padding: 0,
+            background: "rgba(0,0,0,.6)",
+            borderRadius: "50%",
           }}
         />
       </Popconfirm>
       <Button
-        type="text" size="small" icon={<EyeOutlined />}
-        onClick={(e) => { e.stopPropagation(); onView(); }}
+        type="text"
+        size="small"
+        icon={<EyeOutlined />}
+        onClick={(e) => {
+          e.stopPropagation();
+          onView();
+        }}
         onPointerDown={(e) => e.stopPropagation()}
         style={{
-          position: "absolute", bottom: -6, left: -6, fontSize: 10,
-          width: 18, height: 18, minWidth: 18, padding: 0,
-          background: "rgba(0,0,0,.6)", borderRadius: "50%", color: "#fff",
+          position: "absolute",
+          bottom: -6,
+          left: -6,
+          fontSize: 10,
+          width: 18,
+          height: 18,
+          minWidth: 18,
+          padding: 0,
+          background: "rgba(0,0,0,.6)",
+          borderRadius: "50%",
+          color: "#fff",
         }}
       />
     </div>
@@ -178,7 +224,7 @@ export function XhsDraftsPage() {
   const [optimizeRefImages, setOptimizeRefImages] = useState<string[]>([]);
   const [optimizeResult, setOptimizeResult] = useState<string | null>(null);
   const [isOptimizing, setIsOptimizing] = useState(false);
-  const [draftTags, setDraftTags] = useState<{id: string; name: string}[]>([]);
+  const [draftTags, setDraftTags] = useState<{ id: string; name: string }[]>([]);
   const [newTagInput, setNewTagInput] = useState("");
   const [isAddingTag, setIsAddingTag] = useState(false);
   const [userImages, setUserImages] = useState<UserImageFile[]>([]);
@@ -215,9 +261,7 @@ export function XhsDraftsPage() {
     try {
       const result = await fetchDrafts("xhs");
       setDrafts(result.items);
-      const current = selectedDraftId
-        ? result.items.find((d) => d.id === selectedDraftId)
-        : result.items[0];
+      const current = selectedDraftId ? result.items.find((d) => d.id === selectedDraftId) : result.items[0];
       if (current) {
         setSelectedDraftId(current.id);
         setTitle(current.title);
@@ -262,13 +306,10 @@ export function XhsDraftsPage() {
     clearStatus();
     try {
       const updated = await updateDraft(selectedDraft.id, { title, body, tags: draftTags });
-      setDrafts((prev) =>
-        prev.map((d) => (d.id === updated.id ? updated : d))
-      );
+      setDrafts((prev) => prev.map((d) => (d.id === updated.id ? updated : d)));
       setMessage(`草稿 #${updated.id} 已保存。`);
     } catch (err: unknown) {
-      const detail = (err as { response?: { data?: { detail?: string } } })
-        ?.response?.data?.detail;
+      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
       setError(detail || "草稿保存失败。");
     } finally {
       setIsSaving(false);
@@ -284,18 +325,13 @@ export function XhsDraftsPage() {
     clearStatus();
     try {
       const saved = await updateDraft(selectedDraft.id, { title, body });
-      setDrafts((prev) =>
-        prev.map((d) => (d.id === saved.id ? saved : d))
-      );
+      setDrafts((prev) => prev.map((d) => (d.id === saved.id ? saved : d)));
       const job = await sendDraftToPublish(saved.id, {
         publish_mode: "immediate",
       });
-      setMessage(
-        `已送入发布中心，发布任务 #${job.id}。请前往发布中心选择账号并发布。`
-      );
+      setMessage(`已送入发布中心，发布任务 #${job.id}。请前往发布中心选择账号并发布。`);
     } catch (err: unknown) {
-      const detail = (err as { response?: { data?: { detail?: string } } })
-        ?.response?.data?.detail;
+      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
       setError(detail || "送发布中心失败。");
     } finally {
       setIsSendingPublish(false);
@@ -304,12 +340,8 @@ export function XhsDraftsPage() {
 
   /* ── asset management ───────────────────────────────────────────── */
 
-  function addAssetWithCoexistenceCheck(
-    newType: "image" | "video",
-    createAsset: () => DraftAsset,
-  ) {
-    const oppositeExists =
-      newType === "image" ? hasVideoAssets : hasImageAssets;
+  function addAssetWithCoexistenceCheck(newType: "image" | "video", createAsset: () => DraftAsset) {
+    const oppositeExists = newType === "image" ? hasVideoAssets : hasImageAssets;
 
     if (oppositeExists) {
       const msg =
@@ -324,10 +356,7 @@ export function XhsDraftsPage() {
         cancelText: "取消",
         onOk() {
           const oppositeType = newType === "image" ? "video" : "image";
-          setSourceAssets((prev) => [
-            ...prev.filter((a) => a.asset_type !== oppositeType),
-            createAsset(),
-          ]);
+          setSourceAssets((prev) => [...prev.filter((a) => a.asset_type !== oppositeType), createAsset()]);
         },
       });
     } else {
@@ -351,7 +380,7 @@ export function XhsDraftsPage() {
           addAssetWithCoexistenceCheck(assetType, () => saved);
         } else {
           addAssetWithCoexistenceCheck(assetType, () => ({
-            id: -(Date.now()),
+            id: -Date.now(),
             draft_id: 0,
             asset_type: uploaded.asset_type,
             url: uploaded.download_url,
@@ -395,7 +424,7 @@ export function XhsDraftsPage() {
       })();
     } else {
       addAssetWithCoexistenceCheck(assetType, () => ({
-        id: -(Date.now()),
+        id: -Date.now(),
         draft_id: 0,
         asset_type: assetType,
         url: trimmed,
@@ -416,7 +445,7 @@ export function XhsDraftsPage() {
   }
 
   function toggleAssetUrl(url: string) {
-    setSelectedAssetUrls(prev => prev.includes(url) ? prev.filter(u => u !== url) : [...prev, url]);
+    setSelectedAssetUrls((prev) => (prev.includes(url) ? prev.filter((u) => u !== url) : [...prev, url]));
   }
 
   function handleAddSelectedAssets() {
@@ -426,17 +455,22 @@ export function XhsDraftsPage() {
         if (draftId) {
           try {
             const saved = await addDraftAsset(draftId, { asset_type: "image", url });
-            setSourceAssets(prev => [...prev, saved]);
-          } catch { /* ignore individual failures */ }
+            setSourceAssets((prev) => [...prev, saved]);
+          } catch {
+            /* ignore individual failures */
+          }
         } else {
-          setSourceAssets(prev => [...prev, {
-            id: -(Date.now() + Math.random()),
-            draft_id: 0,
-            asset_type: "image",
-            url,
-            local_path: "",
-            sort_order: 0,
-          }]);
+          setSourceAssets((prev) => [
+            ...prev,
+            {
+              id: -(Date.now() + Math.random()),
+              draft_id: 0,
+              asset_type: "image",
+              url,
+              local_path: "",
+              sort_order: 0,
+            },
+          ]);
         }
       }
       setSelectedAssetUrls([]);
@@ -487,27 +521,42 @@ export function XhsDraftsPage() {
             setSourceNote(note);
           }
         } catch {
-          if (!cancelled) { setSourceNote(null); }
+          if (!cancelled) {
+            setSourceNote(null);
+          }
         }
       } else {
-        if (!cancelled) { setSourceNote(null); }
+        if (!cancelled) {
+          setSourceNote(null);
+        }
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDraft?.id, selectedDraft?.source_note_id]);
 
   useEffect(() => {
     if (uploadModalOpen) {
-      void fetchUserImages().then(r => setUserImages(r.items)).catch(() => {});
-      void fetchGeneratedImageAssets().then(r => setAiAssets(r.items)).catch(() => {});
+      void fetchUserImages()
+        .then((r) => setUserImages(r.items))
+        .catch(() => {});
+      void fetchGeneratedImageAssets()
+        .then((r) => setAiAssets(r.items))
+        .catch(() => {});
       setSelectedAssetUrls([]);
     }
   }, [uploadModalOpen]);
 
   useEffect(() => {
     if (refPickerOpen) {
-      void fetchUserImages().then((r) => setUserImages(r.items)).catch(() => {});
-      void fetchGeneratedImageAssets().then((r) => setAiAssets(r.items)).catch(() => {});
+      void fetchUserImages()
+        .then((r) => setUserImages(r.items))
+        .catch(() => {});
+      void fetchGeneratedImageAssets()
+        .then((r) => setAiAssets(r.items))
+        .catch(() => {});
     }
   }, [refPickerOpen]);
 
@@ -537,7 +586,9 @@ export function XhsDraftsPage() {
       const draftId = selectedDraft?.id;
       if (draftId) {
         const ids = reorderedImages.filter((a) => a.id > 0).map((a) => a.id);
-        void reorderDraftAssets(draftId, ids).catch((err) => { console.error("reorder failed", err); });
+        void reorderDraftAssets(draftId, ids).catch((err) => {
+          console.error("reorder failed", err);
+        });
       }
       return result;
     });
@@ -559,7 +610,10 @@ export function XhsDraftsPage() {
                 <SortableImageThumb
                   key={asset.id}
                   asset={asset}
-                  onEdit={() => { setOptimizeAssetId(asset.id); setOptimizeModalOpen(true); }}
+                  onEdit={() => {
+                    setOptimizeAssetId(asset.id);
+                    setOptimizeModalOpen(true);
+                  }}
                   onRemove={() => handleRemoveAsset(asset.id)}
                   onView={() => setPreviewImage(asset.url || asset.local_path)}
                 />
@@ -567,9 +621,15 @@ export function XhsDraftsPage() {
               <div
                 onClick={() => setUploadModalOpen(true)}
                 style={{
-                  width: 60, height: 60, borderRadius: 4, border: "1px dashed #434343",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  cursor: "pointer", background: "rgba(255,255,255,0.04)",
+                  width: 60,
+                  height: 60,
+                  borderRadius: 4,
+                  border: "1px dashed #434343",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  background: "rgba(255,255,255,0.04)",
                 }}
               >
                 <PlusOutlined style={{ fontSize: 20, color: "#8c8c8c" }} />
@@ -595,8 +655,11 @@ export function XhsDraftsPage() {
             <div
               key={asset.id}
               style={{
-                display: "flex", alignItems: "center", gap: 8,
-                padding: "4px 8px", borderRadius: 4,
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                padding: "4px 8px",
+                borderRadius: 4,
                 background: "rgba(255,255,255,0.04)",
               }}
             >
@@ -606,12 +669,19 @@ export function XhsDraftsPage() {
               </Text>
               {asset.url && (
                 <a href={asset.url} target="_blank" rel="noopener noreferrer">
-                  <Button type="link" size="small" icon={<LinkOutlined />}>查看</Button>
+                  <Button type="link" size="small" icon={<LinkOutlined />}>
+                    查看
+                  </Button>
                 </a>
               )}
               <Button
-                type="text" size="small" icon={<EditOutlined />}
-                onClick={() => { setOptimizeAssetId(asset.id); setOptimizeModalOpen(true); }}
+                type="text"
+                size="small"
+                icon={<EditOutlined />}
+                onClick={() => {
+                  setOptimizeAssetId(asset.id);
+                  setOptimizeModalOpen(true);
+                }}
                 style={{ color: "#1668dc" }}
               />
               <Popconfirm title="移除此视频？" onConfirm={() => handleRemoveAsset(asset.id)}>
@@ -622,9 +692,15 @@ export function XhsDraftsPage() {
           <div
             onClick={() => setUploadModalOpen(true)}
             style={{
-              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-              padding: "4px 8px", borderRadius: 4, border: "1px dashed #434343",
-              cursor: "pointer", background: "rgba(255,255,255,0.04)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+              padding: "4px 8px",
+              borderRadius: 4,
+              border: "1px dashed #434343",
+              cursor: "pointer",
+              background: "rgba(255,255,255,0.04)",
             }}
           >
             <PlusOutlined style={{ fontSize: 16, color: "#8c8c8c" }} />
@@ -643,34 +719,14 @@ export function XhsDraftsPage() {
         title="草稿库"
         description="管理所有 AI 改写草稿，编辑内容和素材后送入发布中心。"
         action={
-          <Button
-            icon={<ReloadOutlined />}
-            onClick={loadDrafts}
-            loading={isLoading}
-          >
+          <Button icon={<ReloadOutlined />} onClick={loadDrafts} loading={isLoading}>
             刷新
           </Button>
         }
       />
 
-      {error && (
-        <Alert
-          type="error"
-          message={error}
-          showIcon
-          closable
-          onClose={() => setError(null)}
-        />
-      )}
-      {message && (
-        <Alert
-          type="success"
-          message={message}
-          showIcon
-          closable
-          onClose={() => setMessage(null)}
-        />
-      )}
+      {error && <Alert type="error" message={error} showIcon closable onClose={() => setError(null)} />}
+      {message && <Alert type="success" message={message} showIcon closable onClose={() => setMessage(null)} />}
 
       <Row gutter={16}>
         {/* Left column: draft list */}
@@ -679,10 +735,7 @@ export function XhsDraftsPage() {
             title={
               <Space>
                 <Text strong>草稿列表</Text>
-                <Badge
-                  count={drafts.length}
-                  style={{ backgroundColor: "#1668dc" }}
-                />
+                <Badge count={drafts.length} style={{ backgroundColor: "#1668dc" }} />
               </Space>
             }
             styles={{ body: { padding: 0 } }}
@@ -696,17 +749,9 @@ export function XhsDraftsPage() {
               </div>
             ) : drafts.length === 0 ? (
               <Empty
-                image={
-                  <FileTextOutlined
-                    style={{ fontSize: 40, color: "#8c8c8c" }}
-                  />
-                }
+                image={<FileTextOutlined style={{ fontSize: 40, color: "#8c8c8c" }} />}
                 imageStyle={{ height: 56 }}
-                description={
-                  <Paragraph type="secondary">
-                    还没有草稿，请从内容库或 AI 工坊创建。
-                  </Paragraph>
-                }
+                description={<Paragraph type="secondary">还没有草稿，请从内容库或 AI 工坊创建。</Paragraph>}
                 style={{ padding: 24 }}
               />
             ) : (
@@ -721,9 +766,7 @@ export function XhsDraftsPage() {
                         cursor: "pointer",
                         padding: "10px 16px",
                         background: isActive ? "#1668dc10" : "transparent",
-                        borderLeft: isActive
-                          ? "2px solid #1668dc"
-                          : "2px solid transparent",
+                        borderLeft: isActive ? "2px solid #1668dc" : "2px solid transparent",
                         transition: "all 0.15s",
                         margin: 0,
                       }}
@@ -748,17 +791,11 @@ export function XhsDraftsPage() {
                           >
                             {draft.title || "未命名草稿"}
                           </Text>
-                          <Text
-                            type="secondary"
-                            style={{ fontSize: 11, display: "block" }}
-                          >
+                          <Text type="secondary" style={{ fontSize: 11, display: "block" }}>
                             {formatShanghaiTime(draft.created_at)}
                           </Text>
                           {draft.source_note_id && (
-                            <Tag
-                              color="blue"
-                              style={{ fontSize: 10, marginTop: 2 }}
-                            >
+                            <Tag color="blue" style={{ fontSize: 10, marginTop: 2 }}>
                               来源笔记
                             </Tag>
                           )}
@@ -812,16 +849,8 @@ export function XhsDraftsPage() {
                 size="small"
                 extra={
                   sourceNote ? (
-                    <a
-                      href={`https://www.xiaohongshu.com/explore/${sourceNote.note_id}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <Button
-                        type="link"
-                        size="small"
-                        icon={<LinkOutlined />}
-                      >
+                    <a href={`https://www.xiaohongshu.com/explore/${sourceNote.note_id}`} target="_blank" rel="noopener noreferrer">
+                      <Button type="link" size="small" icon={<LinkOutlined />}>
                         查看原文
                       </Button>
                     </a>
@@ -842,9 +871,7 @@ export function XhsDraftsPage() {
                       {sourceNote.content}
                     </Paragraph>
                     <Space size={4}>
-                      <Tag color={hasVideoAssets ? "purple" : "blue"}>
-                        {hasVideoAssets ? "视频" : "图文"}
-                      </Tag>
+                      <Tag color={hasVideoAssets ? "purple" : "blue"}>{hasVideoAssets ? "视频" : "图文"}</Tag>
                     </Space>
                   </div>
                 )}
@@ -857,13 +884,26 @@ export function XhsDraftsPage() {
 
                 {/* Empty state when no assets */}
                 {imageAssets.length === 0 && videoAssets.length === 0 && (
-                  <div onClick={() => setUploadModalOpen(true)} style={{
-                    width: "100%", height: 80, borderRadius: 8, border: "1px dashed #434343",
-                    display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column",
-                    cursor: "pointer", background: "rgba(255,255,255,0.04)", gap: 4,
-                  }}>
+                  <div
+                    onClick={() => setUploadModalOpen(true)}
+                    style={{
+                      width: "100%",
+                      height: 80,
+                      borderRadius: 8,
+                      border: "1px dashed #434343",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexDirection: "column",
+                      cursor: "pointer",
+                      background: "rgba(255,255,255,0.04)",
+                      gap: 4,
+                    }}
+                  >
                     <PlusOutlined style={{ fontSize: 24, color: "#8c8c8c" }} />
-                    <Text type="secondary" style={{ fontSize: 12 }}>添加素材</Text>
+                    <Text type="secondary" style={{ fontSize: 12 }}>
+                      添加素材
+                    </Text>
                   </div>
                 )}
               </Card>
@@ -872,7 +912,13 @@ export function XhsDraftsPage() {
               <Modal
                 title="素材优化"
                 open={optimizeModalOpen}
-                onCancel={() => { setOptimizeModalOpen(false); setOptimizeAssetId(null); setOptimizePrompt(""); setOptimizeRefImages([]); setOptimizeResult(null); }}
+                onCancel={() => {
+                  setOptimizeModalOpen(false);
+                  setOptimizeAssetId(null);
+                  setOptimizePrompt("");
+                  setOptimizeRefImages([]);
+                  setOptimizeResult(null);
+                }}
                 footer={null}
                 width={520}
               >
@@ -885,24 +931,63 @@ export function XhsDraftsPage() {
                       <Row gutter={16} style={{ marginBottom: 16 }}>
                         <Col span={12}>
                           <div style={{ padding: 8, background: "rgba(255,255,255,0.04)", borderRadius: 8, textAlign: "center" }}>
-                            <Text type="secondary" style={{ fontSize: 11, display: "block", marginBottom: 4 }}>当前素材</Text>
+                            <Text type="secondary" style={{ fontSize: 11, display: "block", marginBottom: 4 }}>
+                              当前素材
+                            </Text>
                             {isImage ? (
-                              <img src={asset.url || asset.local_path} style={{ width: 140, height: 140, objectFit: "cover", borderRadius: 6 }} referrerPolicy="no-referrer" />
+                              <img
+                                src={asset.url || asset.local_path}
+                                style={{ width: 140, height: 140, objectFit: "cover", borderRadius: 6 }}
+                                referrerPolicy="no-referrer"
+                              />
                             ) : (
                               <div style={{ height: 140, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                <Space direction="vertical" align="center"><PlayCircleOutlined style={{ fontSize: 32, color: "#1668dc" }} /><Text style={{ fontSize: 12 }}>视频</Text></Space>
+                                <Space direction="vertical" align="center">
+                                  <PlayCircleOutlined style={{ fontSize: 32, color: "#1668dc" }} />
+                                  <Text style={{ fontSize: 12 }}>视频</Text>
+                                </Space>
                               </div>
                             )}
                           </div>
                         </Col>
                         <Col span={12}>
-                          <div style={{ padding: 8, background: "rgba(255,255,255,0.04)", borderRadius: 8, textAlign: "center", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-                            <Text type="secondary" style={{ fontSize: 11, display: "block", marginBottom: 4 }}>优化后预览</Text>
+                          <div
+                            style={{
+                              padding: 8,
+                              background: "rgba(255,255,255,0.04)",
+                              borderRadius: 8,
+                              textAlign: "center",
+                              height: "100%",
+                              display: "flex",
+                              flexDirection: "column",
+                              alignItems: "center",
+                              justifyContent: "center",
+                            }}
+                          >
+                            <Text type="secondary" style={{ fontSize: 11, display: "block", marginBottom: 4 }}>
+                              优化后预览
+                            </Text>
                             {optimizeResult ? (
-                              <img src={optimizeResult} style={{ width: 140, height: 140, objectFit: "cover", borderRadius: 6 }} referrerPolicy="no-referrer" />
+                              <img
+                                src={optimizeResult}
+                                style={{ width: 140, height: 140, objectFit: "cover", borderRadius: 6 }}
+                                referrerPolicy="no-referrer"
+                              />
                             ) : (
-                              <div style={{ width: 140, height: 140, border: "1px dashed #434343", borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                <Text type="secondary" style={{ fontSize: 12 }}>{isOptimizing ? "生成中..." : "等待生成"}</Text>
+                              <div
+                                style={{
+                                  width: 140,
+                                  height: 140,
+                                  border: "1px dashed #434343",
+                                  borderRadius: 6,
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                }}
+                              >
+                                <Text type="secondary" style={{ fontSize: 12 }}>
+                                  {isOptimizing ? "生成中..." : "等待生成"}
+                                </Text>
                               </div>
                             )}
                           </div>
@@ -912,20 +997,61 @@ export function XhsDraftsPage() {
                       {isImage ? (
                         <div>
                           <div style={{ marginBottom: 8 }}>
-                            <Text type="secondary" style={{ fontSize: 12, display: "block", marginBottom: 4 }}>额外参考图（可选）</Text>
+                            <Text type="secondary" style={{ fontSize: 12, display: "block", marginBottom: 4 }}>
+                              额外参考图（可选）
+                            </Text>
                             <Space size={8} wrap>
                               {optimizeRefImages.map((url, idx) => (
-                                <div key={idx} style={{ position: "relative", width: 40, height: 40, borderRadius: 4, overflow: "hidden", border: "1px solid #333" }}>
-                                  <img src={url} style={{ width: "100%", height: "100%", objectFit: "cover" }} referrerPolicy="no-referrer" />
-                                  <Button type="text" danger size="small" icon={<DeleteOutlined />}
+                                <div
+                                  key={idx}
+                                  style={{
+                                    position: "relative",
+                                    width: 40,
+                                    height: 40,
+                                    borderRadius: 4,
+                                    overflow: "hidden",
+                                    border: "1px solid #333",
+                                  }}
+                                >
+                                  <img
+                                    src={url}
+                                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                    referrerPolicy="no-referrer"
+                                  />
+                                  <Button
+                                    type="text"
+                                    danger
+                                    size="small"
+                                    icon={<DeleteOutlined />}
                                     onClick={() => setOptimizeRefImages((prev) => prev.filter((_, i) => i !== idx))}
-                                    style={{ position: "absolute", top: -4, right: -4, fontSize: 8, width: 14, height: 14, minWidth: 14, padding: 0, background: "rgba(0,0,0,.6)", borderRadius: "50%" }}
+                                    style={{
+                                      position: "absolute",
+                                      top: -4,
+                                      right: -4,
+                                      fontSize: 8,
+                                      width: 14,
+                                      height: 14,
+                                      minWidth: 14,
+                                      padding: 0,
+                                      background: "rgba(0,0,0,.6)",
+                                      borderRadius: "50%",
+                                    }}
                                   />
                                 </div>
                               ))}
                               <div
                                 onClick={() => setRefPickerOpen(true)}
-                                style={{ width: 40, height: 40, borderRadius: 4, border: "1px dashed #434343", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", background: "rgba(255,255,255,0.04)" }}
+                                style={{
+                                  width: 40,
+                                  height: 40,
+                                  borderRadius: 4,
+                                  border: "1px dashed #434343",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  cursor: "pointer",
+                                  background: "rgba(255,255,255,0.04)",
+                                }}
                               >
                                 <PlusOutlined style={{ fontSize: 14, color: "#8c8c8c" }} />
                               </div>
@@ -946,8 +1072,12 @@ export function XhsDraftsPage() {
                               icon={<HighlightOutlined />}
                               loading={isOptimizing}
                               onClick={async () => {
-                                if (!optimizePrompt.trim()) { antMessage.warning("请输入润色提示词"); return; }
-                                setIsOptimizing(true); setOptimizeResult(null);
+                                if (!optimizePrompt.trim()) {
+                                  antMessage.warning("请输入润色提示词");
+                                  return;
+                                }
+                                setIsOptimizing(true);
+                                setOptimizeResult(null);
                                 try {
                                   const result = await generateImageWithAi({
                                     prompt: optimizePrompt.trim(),
@@ -958,7 +1088,9 @@ export function XhsDraftsPage() {
                                   antMessage.success("图片润色完成");
                                 } catch {
                                   antMessage.error("图片润色失败，请确认已配置图片生成模型");
-                                } finally { setIsOptimizing(false); }
+                                } finally {
+                                  setIsOptimizing(false);
+                                }
                               }}
                             >
                               图片润色
@@ -967,15 +1099,23 @@ export function XhsDraftsPage() {
                               <Button
                                 block
                                 onClick={() => {
-                                  setSourceAssets((prev) => prev.map((a) => a.id === optimizeAssetId ? { ...a, url: optimizeResult!, local_path: "" } : a));
+                                  setSourceAssets((prev) =>
+                                    prev.map((a) => (a.id === optimizeAssetId ? { ...a, url: optimizeResult!, local_path: "" } : a)),
+                                  );
                                   const draftId = selectedDraft?.id;
                                   if (draftId && optimizeAssetId && optimizeAssetId > 0) {
-                                    void addDraftAsset(draftId, { asset_type: "image", url: optimizeResult! }).then((saved) => {
-                                      void deleteDraftAsset(draftId, optimizeAssetId!).catch(() => {});
-                                      setSourceAssets((prev) => prev.map((a) => a.id === optimizeAssetId ? saved : a));
-                                    }).catch(() => {});
+                                    void addDraftAsset(draftId, { asset_type: "image", url: optimizeResult! })
+                                      .then((saved) => {
+                                        void deleteDraftAsset(draftId, optimizeAssetId!).catch(() => {});
+                                        setSourceAssets((prev) => prev.map((a) => (a.id === optimizeAssetId ? saved : a)));
+                                      })
+                                      .catch(() => {});
                                   }
-                                  setOptimizeModalOpen(false); setOptimizeAssetId(null); setOptimizePrompt(""); setOptimizeRefImages([]); setOptimizeResult(null);
+                                  setOptimizeModalOpen(false);
+                                  setOptimizeAssetId(null);
+                                  setOptimizePrompt("");
+                                  setOptimizeRefImages([]);
+                                  setOptimizeResult(null);
                                   antMessage.success("已替换为润色后的图片");
                                 }}
                               >
@@ -995,54 +1135,117 @@ export function XhsDraftsPage() {
               </Modal>
 
               {/* Reference image picker modal */}
-              <Modal title="选择参考图" open={refPickerOpen} onCancel={() => { setRefPickerOpen(false); setRefPickerUrlInput(""); }} footer={null} width={560}>
-                <Tabs size="small" items={[
-                  {
-                    key: "user",
-                    label: "普通图片资产",
-                    children: userImages.length === 0 ? <Text type="secondary">暂无</Text> : (
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, maxHeight: 200, overflowY: "auto" }}>
-                        {userImages.map((img) => (
-                          <div key={img.file_name} onClick={() => { setOptimizeRefImages((prev) => [...prev, img.url]); setRefPickerOpen(false); }}
-                            style={{ width: 60, height: 60, borderRadius: 4, overflow: "hidden", cursor: "pointer", border: "2px solid transparent" }}>
-                            <img src={img.url} style={{ width: "100%", height: "100%", objectFit: "cover" }} referrerPolicy="no-referrer" />
+              <Modal
+                title="选择参考图"
+                open={refPickerOpen}
+                onCancel={() => {
+                  setRefPickerOpen(false);
+                  setRefPickerUrlInput("");
+                }}
+                footer={null}
+                width={560}
+              >
+                <Tabs
+                  size="small"
+                  items={[
+                    {
+                      key: "user",
+                      label: "普通图片资产",
+                      children:
+                        userImages.length === 0 ? (
+                          <Text type="secondary">暂无</Text>
+                        ) : (
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, maxHeight: 200, overflowY: "auto" }}>
+                            {userImages.map((img) => (
+                              <div
+                                key={img.file_name}
+                                onClick={() => {
+                                  setOptimizeRefImages((prev) => [...prev, img.url]);
+                                  setRefPickerOpen(false);
+                                }}
+                                style={{
+                                  width: 60,
+                                  height: 60,
+                                  borderRadius: 4,
+                                  overflow: "hidden",
+                                  cursor: "pointer",
+                                  border: "2px solid transparent",
+                                }}
+                              >
+                                <img
+                                  src={img.url}
+                                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                  referrerPolicy="no-referrer"
+                                />
+                              </div>
+                            ))}
                           </div>
-                        ))}
-                      </div>
-                    ),
-                  },
-                  {
-                    key: "ai",
-                    label: "AI 图片资产",
-                    children: aiAssets.length === 0 ? <Text type="secondary">暂无</Text> : (
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, maxHeight: 200, overflowY: "auto" }}>
-                        {aiAssets.filter((a) => a.file_path.startsWith("http")).map((asset) => (
-                          <div key={asset.id} onClick={() => { setOptimizeRefImages((prev) => [...prev, asset.file_path]); setRefPickerOpen(false); }}
-                            style={{ width: 60, height: 60, borderRadius: 4, overflow: "hidden", cursor: "pointer", border: "2px solid transparent" }}>
-                            <img src={asset.file_path} style={{ width: "100%", height: "100%", objectFit: "cover" }} referrerPolicy="no-referrer" />
+                        ),
+                    },
+                    {
+                      key: "ai",
+                      label: "AI 图片资产",
+                      children:
+                        aiAssets.length === 0 ? (
+                          <Text type="secondary">暂无</Text>
+                        ) : (
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, maxHeight: 200, overflowY: "auto" }}>
+                            {aiAssets
+                              .filter((a) => a.file_path.startsWith("http"))
+                              .map((asset) => (
+                                <div
+                                  key={asset.id}
+                                  onClick={() => {
+                                    setOptimizeRefImages((prev) => [...prev, asset.file_path]);
+                                    setRefPickerOpen(false);
+                                  }}
+                                  style={{
+                                    width: 60,
+                                    height: 60,
+                                    borderRadius: 4,
+                                    overflow: "hidden",
+                                    cursor: "pointer",
+                                    border: "2px solid transparent",
+                                  }}
+                                >
+                                  <img
+                                    src={asset.file_path}
+                                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                    referrerPolicy="no-referrer"
+                                  />
+                                </div>
+                              ))}
                           </div>
-                        ))}
-                      </div>
-                    ),
-                  },
-                  {
-                    key: "url",
-                    label: "URL",
-                    children: (
-                      <Space.Compact style={{ width: "100%" }}>
-                        <Input placeholder="粘贴图片 URL" value={refPickerUrlInput} onChange={(e) => setRefPickerUrlInput(e.target.value)} />
-                        <Button type="primary" onClick={() => {
-                          const v = refPickerUrlInput.trim();
-                          if (v && (v.startsWith("http://") || v.startsWith("https://") || v.startsWith("/api/"))) {
-                            setOptimizeRefImages((prev) => [...prev, v]);
-                            setRefPickerUrlInput("");
-                            setRefPickerOpen(false);
-                          }
-                        }}>添加</Button>
-                      </Space.Compact>
-                    ),
-                  },
-                ]} />
+                        ),
+                    },
+                    {
+                      key: "url",
+                      label: "URL",
+                      children: (
+                        <Space.Compact style={{ width: "100%" }}>
+                          <Input
+                            placeholder="粘贴图片 URL"
+                            value={refPickerUrlInput}
+                            onChange={(e) => setRefPickerUrlInput(e.target.value)}
+                          />
+                          <Button
+                            type="primary"
+                            onClick={() => {
+                              const v = refPickerUrlInput.trim();
+                              if (v && (v.startsWith("http://") || v.startsWith("https://") || v.startsWith("/api/"))) {
+                                setOptimizeRefImages((prev) => [...prev, v]);
+                                setRefPickerUrlInput("");
+                                setRefPickerOpen(false);
+                              }
+                            }}
+                          >
+                            添加
+                          </Button>
+                        </Space.Compact>
+                      ),
+                    },
+                  ]}
+                />
               </Modal>
 
               {/* Upload modal */}
@@ -1065,7 +1268,9 @@ export function XhsDraftsPage() {
                   </p>
                 </Upload.Dragger>
                 <div style={{ marginTop: 12 }}>
-                  <Text type="secondary" style={{ fontSize: 12, marginBottom: 4, display: "block" }}>或粘贴链接</Text>
+                  <Text type="secondary" style={{ fontSize: 12, marginBottom: 4, display: "block" }}>
+                    或粘贴链接
+                  </Text>
                   <Space.Compact style={{ width: "100%" }}>
                     <Input
                       placeholder="粘贴图片或视频链接"
@@ -1074,11 +1279,7 @@ export function XhsDraftsPage() {
                       onChange={(e) => setAssetUrl(e.target.value)}
                       onPressEnter={handleUrlAdd}
                     />
-                    <Button
-                      type="primary"
-                      icon={<PlusOutlined />}
-                      onClick={handleUrlAdd}
-                    >
+                    <Button type="primary" icon={<PlusOutlined />} onClick={handleUrlAdd}>
                       添加
                     </Button>
                   </Space.Compact>
@@ -1086,46 +1287,79 @@ export function XhsDraftsPage() {
 
                 <Divider style={{ margin: "12px 0" }}>或从图片资产选择</Divider>
 
-                <Tabs size="small" items={[
-                  {
-                    key: "user",
-                    label: "普通图片资产",
-                    children: userImages.length === 0 ? (
-                      <Text type="secondary" style={{ fontSize: 12 }}>暂无普通图片资产，请先在图片工坊上传</Text>
-                    ) : (
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, maxHeight: 200, overflowY: "auto" }}>
-                        {userImages.map((img) => (
-                          <div key={img.file_name} onClick={() => toggleAssetUrl(img.url)}
-                            style={{
-                              width: 60, height: 60, borderRadius: 4, overflow: "hidden", cursor: "pointer",
-                              border: selectedAssetUrls.includes(img.url) ? "2px solid #1668dc" : "2px solid transparent",
-                            }}>
-                            <img src={img.url} style={{ width: "100%", height: "100%", objectFit: "cover" }} referrerPolicy="no-referrer" />
+                <Tabs
+                  size="small"
+                  items={[
+                    {
+                      key: "user",
+                      label: "普通图片资产",
+                      children:
+                        userImages.length === 0 ? (
+                          <Text type="secondary" style={{ fontSize: 12 }}>
+                            暂无普通图片资产，请先在图片工坊上传
+                          </Text>
+                        ) : (
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, maxHeight: 200, overflowY: "auto" }}>
+                            {userImages.map((img) => (
+                              <div
+                                key={img.file_name}
+                                onClick={() => toggleAssetUrl(img.url)}
+                                style={{
+                                  width: 60,
+                                  height: 60,
+                                  borderRadius: 4,
+                                  overflow: "hidden",
+                                  cursor: "pointer",
+                                  border: selectedAssetUrls.includes(img.url) ? "2px solid #1668dc" : "2px solid transparent",
+                                }}
+                              >
+                                <img
+                                  src={img.url}
+                                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                  referrerPolicy="no-referrer"
+                                />
+                              </div>
+                            ))}
                           </div>
-                        ))}
-                      </div>
-                    ),
-                  },
-                  {
-                    key: "ai",
-                    label: "AI 图片资产",
-                    children: aiAssets.length === 0 ? (
-                      <Text type="secondary" style={{ fontSize: 12 }}>暂无 AI 图片资产，请先在图片工坊生成</Text>
-                    ) : (
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, maxHeight: 200, overflowY: "auto" }}>
-                        {aiAssets.filter(a => a.file_path.startsWith("http")).map((asset) => (
-                          <div key={asset.id} onClick={() => toggleAssetUrl(asset.file_path)}
-                            style={{
-                              width: 60, height: 60, borderRadius: 4, overflow: "hidden", cursor: "pointer",
-                              border: selectedAssetUrls.includes(asset.file_path) ? "2px solid #1668dc" : "2px solid transparent",
-                            }}>
-                            <img src={asset.file_path} style={{ width: "100%", height: "100%", objectFit: "cover" }} referrerPolicy="no-referrer" />
+                        ),
+                    },
+                    {
+                      key: "ai",
+                      label: "AI 图片资产",
+                      children:
+                        aiAssets.length === 0 ? (
+                          <Text type="secondary" style={{ fontSize: 12 }}>
+                            暂无 AI 图片资产，请先在图片工坊生成
+                          </Text>
+                        ) : (
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, maxHeight: 200, overflowY: "auto" }}>
+                            {aiAssets
+                              .filter((a) => a.file_path.startsWith("http"))
+                              .map((asset) => (
+                                <div
+                                  key={asset.id}
+                                  onClick={() => toggleAssetUrl(asset.file_path)}
+                                  style={{
+                                    width: 60,
+                                    height: 60,
+                                    borderRadius: 4,
+                                    overflow: "hidden",
+                                    cursor: "pointer",
+                                    border: selectedAssetUrls.includes(asset.file_path) ? "2px solid #1668dc" : "2px solid transparent",
+                                  }}
+                                >
+                                  <img
+                                    src={asset.file_path}
+                                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                    referrerPolicy="no-referrer"
+                                  />
+                                </div>
+                              ))}
                           </div>
-                        ))}
-                      </div>
-                    ),
-                  },
-                ]} />
+                        ),
+                    },
+                  ]}
+                />
 
                 {selectedAssetUrls.length > 0 && (
                   <Button type="primary" block style={{ marginTop: 12 }} onClick={handleAddSelectedAssets}>
@@ -1138,12 +1372,7 @@ export function XhsDraftsPage() {
               <Card title="编辑器">
                 <Form layout="vertical">
                   <Form.Item label="标题" style={{ marginBottom: 16 }}>
-                    <Input
-                      value={title}
-                      onChange={(e) => setTitle(e.target.value)}
-                      placeholder="草稿标题"
-                      size="large"
-                    />
+                    <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="草稿标题" size="large" />
                   </Form.Item>
                   <Form.Item label="正文" style={{ marginBottom: 16 }}>
                     <TextArea
@@ -1192,22 +1421,13 @@ export function XhsDraftsPage() {
                           placeholder="输入标签"
                         />
                       ) : (
-                        <Tag
-                          style={{ cursor: "pointer", borderStyle: "dashed" }}
-                          onClick={() => setIsAddingTag(true)}
-                        >
+                        <Tag style={{ cursor: "pointer", borderStyle: "dashed" }} onClick={() => setIsAddingTag(true)}>
                           + 添加标签
                         </Tag>
                       )}
                     </Space>
                   </Form.Item>
-                  <Button
-                    type="primary"
-                    icon={<SaveOutlined />}
-                    onClick={handleSave}
-                    loading={isSaving}
-                    disabled={!selectedDraft}
-                  >
+                  <Button type="primary" icon={<SaveOutlined />} onClick={handleSave} loading={isSaving} disabled={!selectedDraft}>
                     保存
                   </Button>
                 </Form>
@@ -1225,10 +1445,7 @@ export function XhsDraftsPage() {
                   >
                     送入发布中心
                   </Button>
-                  <Button
-                    icon={<ExperimentOutlined />}
-                    onClick={() => navigate("/platforms/xhs/rewrite")}
-                  >
+                  <Button icon={<ExperimentOutlined />} onClick={() => navigate("/platforms/xhs/rewrite")}>
                     AI 改写
                   </Button>
                 </Space>
@@ -1242,7 +1459,12 @@ export function XhsDraftsPage() {
         <Image
           src={previewImage}
           style={{ display: "none" }}
-          preview={{ visible: true, onVisibleChange: (v) => { if (!v) setPreviewImage(null); } }}
+          preview={{
+            visible: true,
+            onVisibleChange: (v) => {
+              if (!v) setPreviewImage(null);
+            },
+          }}
         />
       )}
     </div>

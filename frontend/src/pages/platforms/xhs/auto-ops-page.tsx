@@ -33,14 +33,7 @@ import {
 import { useEffect, useState } from "react";
 
 import { PageHeader } from "../../../components/layout/app-shell";
-import {
-  createAutoTask,
-  deleteAutoTask,
-  fetchAccounts,
-  fetchAutoTasks,
-  runAutoTask,
-  updateAutoTask,
-} from "../../../lib/api";
+import { createAutoTask, deleteAutoTask, fetchAccounts, fetchAutoTasks, runAutoTask, updateAutoTask } from "../../../lib/api";
 import { formatShanghaiTime } from "../../../lib/time";
 import type { AutoTask, AutoTaskRunResult, PlatformAccount } from "../../../types";
 
@@ -115,10 +108,7 @@ export function AutoOpsPage() {
     setIsLoading(true);
     setError(null);
     try {
-      const [tasksRes, accountsRes] = await Promise.all([
-        fetchAutoTasks(),
-        fetchAccounts("xhs"),
-      ]);
+      const [tasksRes, accountsRes] = await Promise.all([fetchAutoTasks(), fetchAccounts("xhs")]);
       setTasks(tasksRes.items);
       setPcAccounts(accountsRes.filter((a) => a.sub_type === "pc"));
       setCreatorAccounts(accountsRes.filter((a) => a.sub_type === "creator"));
@@ -208,7 +198,7 @@ export function AutoOpsPage() {
       setLastRunResult(result);
       setTasks((prev) => prev.map((t) => (t.id === result.auto_task.id ? result.auto_task : t)));
       setMessage(
-        `任务"${task.name}"执行完成 -- 关键词: ${result.keyword}, 来源笔记: ${result.source_note.title}, 已创建发布任务 #${result.publish_job.id}。`
+        `任务"${task.name}"执行完成 -- 关键词: ${result.keyword}, 来源笔记: ${result.source_note.title}, 已创建发布任务 #${result.publish_job.id}。`,
       );
     } catch (err: unknown) {
       const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
@@ -258,8 +248,11 @@ export function AutoOpsPage() {
   function scheduleDesc(task: AutoTask): string {
     if (task.schedule_type === "daily") return `每日 ${task.schedule_time}`;
     if (task.schedule_type === "weekly") {
-      const dayMap: Record<string, string> = {"1":"一","2":"二","3":"三","4":"四","5":"五","6":"六","7":"日"};
-      const days = (task.schedule_days || "").split(",").map(d => dayMap[d] || d).join("、");
+      const dayMap: Record<string, string> = { "1": "一", "2": "二", "3": "三", "4": "四", "5": "五", "6": "六", "7": "日" };
+      const days = (task.schedule_days || "")
+        .split(",")
+        .map((d) => dayMap[d] || d)
+        .join("、");
       return `每周${days} ${task.schedule_time}`;
     }
     if (task.schedule_type === "interval") return `每 ${task.schedule_interval_hours} 小时`;
@@ -279,12 +272,8 @@ export function AutoOpsPage() {
         }
       />
 
-      {error && (
-        <Alert type="error" message={error} showIcon closable onClose={() => setError(null)} />
-      )}
-      {message && (
-        <Alert type="success" message={message} showIcon closable onClose={() => setMessage(null)} />
-      )}
+      {error && <Alert type="error" message={error} showIcon closable onClose={() => setError(null)} />}
+      {message && <Alert type="success" message={message} showIcon closable onClose={() => setMessage(null)} />}
 
       {/* Task List */}
       {isLoading ? (
@@ -344,11 +333,7 @@ export function AutoOpsPage() {
                 {/* Stats */}
                 <Row gutter={16} style={{ marginBottom: 12 }}>
                   <Col span={8}>
-                    <Statistic
-                      title="已发布"
-                      value={task.total_published}
-                      valueStyle={{ fontSize: 20, color: "#e8e8e8" }}
-                    />
+                    <Statistic title="已发布" value={task.total_published} valueStyle={{ fontSize: 20, color: "#e8e8e8" }} />
                   </Col>
                 </Row>
 
@@ -373,11 +358,7 @@ export function AutoOpsPage() {
                     <Text type="secondary" style={{ fontSize: 12, display: "block", marginBottom: 2 }}>
                       AI 指令
                     </Text>
-                    <Paragraph
-                      type="secondary"
-                      ellipsis={{ rows: 2 }}
-                      style={{ fontSize: 12, marginBottom: 0 }}
-                    >
+                    <Paragraph type="secondary" ellipsis={{ rows: 2 }} style={{ fontSize: 12, marginBottom: 0 }}>
                       {task.ai_instruction}
                     </Paragraph>
                   </div>
@@ -412,19 +393,10 @@ export function AutoOpsPage() {
                   >
                     {task.status === "active" ? "暂停" : "恢复"}
                   </Button>
-                  <Button
-                    size="small"
-                    icon={<EditOutlined />}
-                    onClick={() => openEdit(task)}
-                  >
+                  <Button size="small" icon={<EditOutlined />} onClick={() => openEdit(task)}>
                     编辑
                   </Button>
-                  <Popconfirm
-                    title="确认删除此自动任务？"
-                    onConfirm={() => handleDelete(task.id)}
-                    okText="删除"
-                    cancelText="取消"
-                  >
+                  <Popconfirm title="确认删除此自动任务？" onConfirm={() => handleDelete(task.id)} okText="删除" cancelText="取消">
                     <Button size="small" danger icon={<DeleteOutlined />}>
                       删除
                     </Button>
@@ -552,17 +524,26 @@ export function AutoOpsPage() {
             </Form.Item>
 
             <Form.Item label="调度方式">
-              <Select value={createScheduleType} onChange={setCreateScheduleType} options={[
-                { value: "manual", label: "手动触发" },
-                { value: "daily", label: "每日定时" },
-                { value: "weekly", label: "每周定时" },
-                { value: "interval", label: "自定义间隔" },
-              ]} />
+              <Select
+                value={createScheduleType}
+                onChange={setCreateScheduleType}
+                options={[
+                  { value: "manual", label: "手动触发" },
+                  { value: "daily", label: "每日定时" },
+                  { value: "weekly", label: "每周定时" },
+                  { value: "interval", label: "自定义间隔" },
+                ]}
+              />
             </Form.Item>
 
             {(createScheduleType === "daily" || createScheduleType === "weekly") && (
               <Form.Item label="执行时间">
-                <Input value={createScheduleTime} onChange={(e) => setCreateScheduleTime(e.target.value)} placeholder="HH:MM" style={{ width: 120 }} />
+                <Input
+                  value={createScheduleTime}
+                  onChange={(e) => setCreateScheduleTime(e.target.value)}
+                  placeholder="HH:MM"
+                  style={{ width: 120 }}
+                />
               </Form.Item>
             )}
 
@@ -591,13 +572,7 @@ export function AutoOpsPage() {
             )}
 
             <Form.Item>
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={handleCreate}
-                loading={isCreating}
-                block
-              >
+              <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate} loading={isCreating} block>
                 创建任务
               </Button>
             </Form.Item>
@@ -623,40 +598,36 @@ export function AutoOpsPage() {
       >
         <Form layout="vertical" style={{ marginTop: 16 }}>
           <Form.Item label="任务名称">
-            <Input
-              value={editName}
-              onChange={(e) => setEditName(e.target.value)}
-              maxLength={128}
-            />
+            <Input value={editName} onChange={(e) => setEditName(e.target.value)} maxLength={128} />
           </Form.Item>
           <Form.Item label="关键词（每行一个）">
-            <TextArea
-              value={editKeywords}
-              onChange={(e) => setEditKeywords(e.target.value)}
-              rows={3}
-            />
+            <TextArea value={editKeywords} onChange={(e) => setEditKeywords(e.target.value)} rows={3} />
           </Form.Item>
           <Form.Item label="AI 改写指令">
-            <TextArea
-              value={editInstruction}
-              onChange={(e) => setEditInstruction(e.target.value)}
-              rows={3}
-              maxLength={2000}
-            />
+            <TextArea value={editInstruction} onChange={(e) => setEditInstruction(e.target.value)} rows={3} maxLength={2000} />
           </Form.Item>
 
           <Form.Item label="调度方式">
-            <Select value={editScheduleType} onChange={setEditScheduleType} options={[
-              { value: "manual", label: "手动触发" },
-              { value: "daily", label: "每日定时" },
-              { value: "weekly", label: "每周定时" },
-              { value: "interval", label: "自定义间隔" },
-            ]} />
+            <Select
+              value={editScheduleType}
+              onChange={setEditScheduleType}
+              options={[
+                { value: "manual", label: "手动触发" },
+                { value: "daily", label: "每日定时" },
+                { value: "weekly", label: "每周定时" },
+                { value: "interval", label: "自定义间隔" },
+              ]}
+            />
           </Form.Item>
 
           {(editScheduleType === "daily" || editScheduleType === "weekly") && (
             <Form.Item label="执行时间">
-              <Input value={editScheduleTime} onChange={(e) => setEditScheduleTime(e.target.value)} placeholder="HH:MM" style={{ width: 120 }} />
+              <Input
+                value={editScheduleTime}
+                onChange={(e) => setEditScheduleTime(e.target.value)}
+                placeholder="HH:MM"
+                style={{ width: 120 }}
+              />
             </Form.Item>
           )}
 

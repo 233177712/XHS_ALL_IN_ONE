@@ -37,9 +37,7 @@ export function QrLoginPanel({ accountType, onConfirmed }: QrLoginPanelProps) {
     confirmedRef.current = false;
     try {
       const nextSession =
-        accountType === "pc"
-          ? await createXhsPcQrLoginSession({ sync_creator: syncCreator })
-          : await createXhsCreatorQrLoginSession();
+        accountType === "pc" ? await createXhsPcQrLoginSession({ sync_creator: syncCreator }) : await createXhsCreatorQrLoginSession();
       setSession(nextSession);
       setStatusText(accountType === "pc" ? "请使用小红书 App 扫描二维码" : "请使用小红书 App 扫描 Creator 二维码");
     } catch (caught) {
@@ -51,6 +49,7 @@ export function QrLoginPanel({ accountType, onConfirmed }: QrLoginPanelProps) {
 
   useEffect(() => {
     void startSession();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [accountType, syncCreator]);
 
   useEffect(() => {
@@ -63,7 +62,7 @@ export function QrLoginPanel({ accountType, onConfirmed }: QrLoginPanelProps) {
         const polled = await pollXhsLoginSession(session.session_id);
         setSession((current) => ({
           ...polled,
-          qr_image_data_url: polled.qr_image_data_url ?? current?.qr_image_data_url
+          qr_image_data_url: polled.qr_image_data_url ?? current?.qr_image_data_url,
         }));
         if (polled.status === "scanned") {
           setStatusText("已扫码，请在手机端确认登录");
@@ -146,12 +145,7 @@ export function QrLoginPanel({ accountType, onConfirmed }: QrLoginPanelProps) {
 
       {error ? <Alert type="error" message={error} showIcon /> : null}
 
-      <Button
-        block
-        icon={<ReloadOutlined />}
-        onClick={startSession}
-        loading={isLoading}
-      >
+      <Button block icon={<ReloadOutlined />} onClick={startSession} loading={isLoading}>
         {isLoading ? "生成中..." : "刷新二维码"}
       </Button>
     </Space>

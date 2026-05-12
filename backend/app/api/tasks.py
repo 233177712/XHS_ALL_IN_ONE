@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Optional
-
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -56,7 +54,7 @@ def _is_scheduler_task(task: Task) -> bool:
 
 @router.get("")
 def get_tasks(
-    platform: Optional[str] = None,
+    platform: str | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     current_user: User = Depends(get_current_user),

@@ -1,26 +1,5 @@
-import {
-  Alert,
-  Avatar,
-  Button,
-  Card,
-  Col,
-  Empty,
-  Modal,
-  Row,
-  Space,
-  Spin,
-  Statistic,
-  Tag,
-  Typography,
-} from "antd";
-import {
-  DeleteOutlined,
-  PlusOutlined,
-  ReloadOutlined,
-  SafetyCertificateOutlined,
-  SyncOutlined,
-  UserOutlined,
-} from "@ant-design/icons";
+import { Alert, Avatar, Button, Card, Col, Empty, Modal, Row, Space, Spin, Statistic, Tag, Typography } from "antd";
+import { DeleteOutlined, PlusOutlined, ReloadOutlined, SafetyCertificateOutlined, SyncOutlined, UserOutlined } from "@ant-design/icons";
 import { useEffect, useState } from "react";
 
 import { AddAccountDrawer } from "../../../components/account/add-account-drawer";
@@ -152,9 +131,7 @@ export function XhsAccountsPage() {
 
       {/* Section card */}
       <Card
-        title={
-          <span style={{ color: "rgba(255,255,255,0.88)", fontWeight: 600 }}>已绑定账号</span>
-        }
+        title={<span style={{ color: "rgba(255,255,255,0.88)", fontWeight: 600 }}>已绑定账号</span>}
         extra={
           <Button icon={<ReloadOutlined />} onClick={loadAccounts} loading={isLoading}>
             刷新
@@ -214,21 +191,13 @@ export function XhsAccountsPage() {
                         icon={!account.avatar_url ? <UserOutlined /> : undefined}
                         style={{ background: "#262626", flexShrink: 0 }}
                       >
-                        {!account.avatar_url ? (account.nickname?.slice(0, 1).toUpperCase() || "X") : undefined}
+                        {!account.avatar_url ? account.nickname?.slice(0, 1).toUpperCase() || "X" : undefined}
                       </Avatar>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <Text
-                          strong
-                          ellipsis
-                          style={{ display: "block", color: "rgba(255,255,255,0.88)", fontSize: 15 }}
-                        >
+                        <Text strong ellipsis style={{ display: "block", color: "rgba(255,255,255,0.88)", fontSize: 15 }}>
                           {account.nickname || "未命名账号"}
                         </Text>
-                        <Text
-                          type="secondary"
-                          ellipsis
-                          style={{ display: "block", fontSize: 12, color: "rgba(255,255,255,0.35)" }}
-                        >
+                        <Text type="secondary" ellipsis style={{ display: "block", fontSize: 12, color: "rgba(255,255,255,0.35)" }}>
                           {account.external_user_id || "external id pending"}
                         </Text>
                       </div>
@@ -292,10 +261,7 @@ export function XhsAccountsPage() {
 
                     {/* Status message */}
                     {account.status_message ? (
-                      <Text
-                        type="secondary"
-                        style={{ display: "block", fontSize: 12, marginBottom: 12, color: "rgba(255,255,255,0.35)" }}
-                      >
+                      <Text type="secondary" style={{ display: "block", fontSize: 12, marginBottom: 12, color: "rgba(255,255,255,0.35)" }}>
                         {account.status_message}
                       </Text>
                     ) : null}
@@ -322,13 +288,7 @@ export function XhsAccountsPage() {
                         >
                           {isChecking ? "检查中" : "检查"}
                         </Button>
-                        <Button
-                          size="small"
-                          danger
-                          icon={<DeleteOutlined />}
-                          onClick={() => void handleDelete(account)}
-                          title="删除账号"
-                        />
+                        <Button size="small" danger icon={<DeleteOutlined />} onClick={() => void handleDelete(account)} title="删除账号" />
                       </Space>
                     </div>
                   </Card>

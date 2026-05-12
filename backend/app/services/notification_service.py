@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Optional
-
 from sqlalchemy.orm import Session
 
 from backend.app.models.notification import Notification
@@ -46,7 +44,7 @@ def notify_account_expired(db: Session, user_id: int, account_name: str, account
     )
 
 
-def notify_publish_failed(db: Session, user_id: int, job_title: str, job_id: int, task_id: Optional[int] = None) -> Notification:
+def notify_publish_failed(db: Session, user_id: int, job_title: str, job_id: int, task_id: int | None = None) -> Notification:
     return _create(
         db,
         user_id=user_id,
@@ -78,9 +76,9 @@ def _create(
     title: str,
     body: str = "",
     level: str = "info",
-    source_task_id: Optional[int] = None,
-    source_type: Optional[str] = None,
-    source_id: Optional[int] = None,
+    source_task_id: int | None = None,
+    source_type: str | None = None,
+    source_id: int | None = None,
 ) -> Notification:
     n = Notification(
         user_id=user_id,

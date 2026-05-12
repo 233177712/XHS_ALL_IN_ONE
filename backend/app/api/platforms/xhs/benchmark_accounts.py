@@ -1,10 +1,9 @@
 from __future__ import annotations
 
+from collections.abc import Generator
 from datetime import datetime
-import json
-import time
 from statistics import quantiles
-from typing import Any, Generator
+from typing import Any
 from urllib.parse import urlparse, urlunparse
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -13,9 +12,10 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from backend.app.adapters.xhs.pc_api_adapter import XhsPcApiAdapter
 from backend.app.api.platforms.xhs.crawl import (
-    DataCrawlRequest,
     MAX_XHS_CRAWL_INTERVAL_SECONDS,
+    DataCrawlRequest,
     _coerce_timestamp_seconds,
     _save_normalized_notes,
     _sse_event,
@@ -29,8 +29,6 @@ from backend.app.core.time import SHANGHAI_TZ, shanghai_now
 from backend.app.models import MonitoringTarget, PlatformAccount, User
 from backend.app.schemas.common import paginated
 from backend.app.services.monitoring_crawl_service import _decrypt_cookies
-from backend.app.adapters.xhs.pc_api_adapter import XhsPcApiAdapter
-
 
 router = APIRouter(prefix="/xhs/benchmark-accounts", tags=["xhs-benchmark-accounts"])
 

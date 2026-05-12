@@ -43,10 +43,10 @@ def init_db(bind=engine) -> None:
 
 def _run_alembic_migrations() -> None:
     try:
+        import os
+
         from alembic import command
         from alembic.config import Config
-
-        import os
 
         ini_path = os.path.join(os.path.dirname(__file__), "..", "..", "alembic.ini")
         ini_path = os.path.normpath(ini_path)

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from datetime import datetime
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
@@ -36,11 +36,11 @@ class CreatorImagePublishRequest(BaseModel):
     body: str = Field(default="")
     image_file_infos: list[dict[str, Any]] = Field(min_length=1)
     publish_mode: Literal["immediate", "scheduled"] = "immediate"
-    scheduled_at: Optional[datetime] = None
-    topics: Optional[list[str]] = None
-    location: Optional[str] = None
-    privacy_type: Optional[int] = Field(default=None, ge=0, le=1)
-    is_private: Optional[bool] = None
+    scheduled_at: datetime | None = None
+    topics: list[str] | None = None
+    location: str | None = None
+    privacy_type: int | None = Field(default=None, ge=0, le=1)
+    is_private: bool | None = None
 
 
 class CreatorVideoPublishRequest(BaseModel):
@@ -49,11 +49,11 @@ class CreatorVideoPublishRequest(BaseModel):
     body: str = Field(default="")
     video_info: dict[str, Any] = Field(default_factory=dict)
     publish_mode: Literal["immediate", "scheduled"] = "immediate"
-    scheduled_at: Optional[datetime] = None
-    topics: Optional[list[str]] = None
-    location: Optional[str] = None
-    privacy_type: Optional[int] = Field(default=None, ge=0, le=1)
-    is_private: Optional[bool] = None
+    scheduled_at: datetime | None = None
+    topics: list[str] | None = None
+    location: str | None = None
+    privacy_type: int | None = Field(default=None, ge=0, le=1)
+    is_private: bool | None = None
 
 
 def get_creator_api_adapter_factory():
@@ -153,7 +153,7 @@ def _fail_operation_task(db: Session, task: Task, error: str) -> None:
     db.commit()
 
 
-def _scheduled_post_time(publish_mode: str, scheduled_at: Optional[datetime]) -> Optional[int]:
+def _scheduled_post_time(publish_mode: str, scheduled_at: datetime | None) -> int | None:
     if publish_mode != "scheduled":
         return None
     if scheduled_at is None:
@@ -161,7 +161,7 @@ def _scheduled_post_time(publish_mode: str, scheduled_at: Optional[datetime]) ->
     return int(scheduled_at.timestamp() * 1000)
 
 
-def _clean_topics(topics: Optional[list[str]]) -> list[str]:
+def _clean_topics(topics: list[str] | None) -> list[str]:
     if topics is None:
         return []
     return [topic.strip() for topic in topics if topic and topic.strip()]

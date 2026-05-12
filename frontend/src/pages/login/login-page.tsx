@@ -1,24 +1,5 @@
-import {
-  ArrowRightOutlined,
-  DatabaseOutlined,
-  LockOutlined,
-  RadarChartOutlined,
-  RobotOutlined,
-  UserOutlined,
-} from "@ant-design/icons";
-import {
-  Alert,
-  Button,
-  Card,
-  Col,
-  Form,
-  Input,
-  Row,
-  Segmented,
-  Space,
-  Statistic,
-  Typography,
-} from "antd";
+import { ArrowRightOutlined, DatabaseOutlined, LockOutlined, RadarChartOutlined, RobotOutlined, UserOutlined } from "@ant-design/icons";
+import { Alert, Button, Card, Col, Form, Input, Row, Segmented, Space, Statistic, Typography } from "antd";
 import { type FormEvent, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { z } from "zod";
@@ -30,15 +11,8 @@ const { Title, Text, Paragraph } = Typography;
 type AuthMode = "login" | "register";
 
 const credentialsSchema = z.object({
-  username: z
-    .string()
-    .trim()
-    .min(3, "账号至少 3 个字符")
-    .max(80, "账号不能超过 80 个字符"),
-  password: z
-    .string()
-    .min(6, "密码至少 6 个字符")
-    .max(128, "密码不能超过 128 个字符"),
+  username: z.string().trim().min(3, "账号至少 3 个字符").max(80, "账号不能超过 80 个字符"),
+  password: z.string().min(6, "密码至少 6 个字符").max(128, "密码不能超过 128 个字符"),
 });
 
 function errorMessage(error: unknown, fallback: string): string {
@@ -78,19 +52,10 @@ export function LoginPage() {
       } else {
         await auth.register(parsed.data);
       }
-      const from = (
-        location.state as { from?: { pathname?: string } } | null
-      )?.from?.pathname;
+      const from = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname;
       navigate(from || "/platform-select", { replace: true });
     } catch (caughtError) {
-      setError(
-        errorMessage(
-          caughtError,
-          mode === "login"
-            ? "账号不存在或密码错误，请检查后重试。"
-            : "注册失败，该平台账号可能已存在。"
-        )
-      );
+      setError(errorMessage(caughtError, mode === "login" ? "账号不存在或密码错误，请检查后重试。" : "注册失败，该平台账号可能已存在。"));
     } finally {
       setIsSubmitting(false);
     }
@@ -107,11 +72,7 @@ export function LoginPage() {
         padding: 24,
       }}
     >
-      <Row
-        gutter={48}
-        align="middle"
-        style={{ maxWidth: 960, width: "100%" }}
-      >
+      <Row gutter={48} align="middle" style={{ maxWidth: 960, width: "100%" }}>
         {/* Left side: marketing copy */}
         <Col xs={24} md={12}>
           <Space align="center" size={12} style={{ marginBottom: 32 }}>
@@ -120,8 +81,7 @@ export function LoginPage() {
                 width: 40,
                 height: 40,
                 borderRadius: 10,
-                background:
-                  "linear-gradient(135deg, #1668dc 0%, #4e8ff7 100%)",
+                background: "linear-gradient(135deg, #1668dc 0%, #4e8ff7 100%)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -160,13 +120,8 @@ export function LoginPage() {
           >
             小红书运营，从抓取到发布一屏推进。
           </Title>
-          <Paragraph
-            type="secondary"
-            style={{ fontSize: 15, marginBottom: 40 }}
-          >
-            数据发现、内容库、AI
-            改写、账号矩阵和 Creator
-            发布统一在一个工作区里完成。
+          <Paragraph type="secondary" style={{ fontSize: 15, marginBottom: 40 }}>
+            数据发现、内容库、AI 改写、账号矩阵和 Creator 发布统一在一个工作区里完成。
           </Paragraph>
 
           <Row gutter={24}>
@@ -221,14 +176,8 @@ export function LoginPage() {
               body: { padding: "32px 28px" },
             }}
           >
-            <Space
-              align="center"
-              size={8}
-              style={{ marginBottom: 20 }}
-            >
-              <LockOutlined
-                style={{ fontSize: 16, color: "rgba(255,255,255,0.65)" }}
-              />
+            <Space align="center" size={8} style={{ marginBottom: 20 }}>
+              <LockOutlined style={{ fontSize: 16, color: "rgba(255,255,255,0.65)" }} />
               <Text strong style={{ fontSize: 15 }}>
                 {mode === "login" ? "平台登录" : "注册平台账号"}
               </Text>
@@ -266,9 +215,7 @@ export function LoginPage() {
                   <Input.Password
                     prefix={<LockOutlined />}
                     placeholder="请输入密码"
-                    autoComplete={
-                      mode === "login" ? "current-password" : "new-password"
-                    }
+                    autoComplete={mode === "login" ? "current-password" : "new-password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     size="large"
@@ -288,14 +235,7 @@ export function LoginPage() {
                   </Form.Item>
                 )}
 
-                {error && (
-                  <Alert
-                    message={error}
-                    type="error"
-                    showIcon
-                    style={{ marginBottom: 16 }}
-                  />
-                )}
+                {error && <Alert message={error} type="error" showIcon style={{ marginBottom: 16 }} />}
 
                 <Button
                   type="primary"
@@ -321,9 +261,7 @@ export function LoginPage() {
                 fontSize: 12,
               }}
             >
-              {mode === "login"
-                ? "登录后选择小红书工作区开始运营。"
-                : "注册后会自动进入平台选择页。"}
+              {mode === "login" ? "登录后选择小红书工作区开始运营。" : "注册后会自动进入平台选择页。"}
             </Text>
           </Card>
         </Col>

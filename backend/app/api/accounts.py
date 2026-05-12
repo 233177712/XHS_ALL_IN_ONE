@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
@@ -85,7 +84,7 @@ def _sync_creator_account_from_pc_cookie(
 
 @router.get("")
 def get_accounts(
-    platform: Optional[str] = None,
+    platform: str | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     current_user: User = Depends(get_current_user),

@@ -19,7 +19,6 @@ import { XhsDiscoveryPage } from "../pages/platforms/xhs/discovery-page";
 import { XhsDraftsPage } from "../pages/platforms/xhs/rewrite-page";
 import { XhsKeywordsPage } from "../pages/platforms/xhs/keywords-page";
 import { XhsLibraryPage } from "../pages/platforms/xhs/library-page";
-import { XhsMonitoringPage } from "../pages/platforms/xhs/monitoring-page";
 import { XhsImageStudioPage } from "../pages/platforms/xhs/image-studio-page";
 import { XhsPublishPage } from "../pages/platforms/xhs/publish-page";
 import { XhsVideoStudioPage } from "../pages/platforms/xhs/video-studio-page";

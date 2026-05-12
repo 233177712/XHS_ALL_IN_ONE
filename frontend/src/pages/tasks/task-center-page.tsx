@@ -6,32 +6,12 @@ import {
   SyncOutlined,
   ThunderboltOutlined,
 } from "@ant-design/icons";
-import {
-  Alert,
-  Button,
-  Card,
-  Col,
-  Empty,
-  Progress,
-  Row,
-  Space,
-  Spin,
-  Statistic,
-  Table,
-  Tag,
-  Typography,
-} from "antd";
+import { Alert, Button, Card, Col, Empty, Progress, Row, Space, Spin, Statistic, Table, Tag, Typography } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { useEffect, useState } from "react";
 
 import { PageHeader } from "../../components/layout/app-shell";
-import {
-  cancelTask,
-  fetchSchedulerStatus,
-  fetchTasks,
-  retryTask,
-  runDueTasks,
-} from "../../lib/api";
+import { cancelTask, fetchSchedulerStatus, fetchTasks, retryTask, runDueTasks } from "../../lib/api";
 import { formatShanghaiTime } from "../../lib/time";
 import type { SchedulerStatus, TaskRecord } from "../../types";
 
@@ -74,17 +54,13 @@ export function TaskCenterPage() {
   const [isActionLoading, setIsActionLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
-  const [schedulerStatus, setSchedulerStatus] =
-    useState<SchedulerStatus | null>(null);
+  const [schedulerStatus, setSchedulerStatus] = useState<SchedulerStatus | null>(null);
 
   async function loadTasks() {
     setIsLoading(true);
     setError(null);
     try {
-      const [taskResult, statusResult] = await Promise.all([
-        fetchTasks("xhs"),
-        fetchSchedulerStatus(),
-      ]);
+      const [taskResult, statusResult] = await Promise.all([fetchTasks("xhs"), fetchSchedulerStatus()]);
       setTasks(taskResult.items);
       setSchedulerStatus(statusResult);
     } catch {
@@ -99,11 +75,7 @@ export function TaskCenterPage() {
   }, []);
 
   function replaceTask(updatedTask: TaskRecord) {
-    setTasks((currentTasks) =>
-      currentTasks.map((task) =>
-        task.id === updatedTask.id ? updatedTask : task
-      )
-    );
+    setTasks((currentTasks) => currentTasks.map((task) => (task.id === updatedTask.id ? updatedTask : task)));
   }
 
   async function cancelSelectedTask(taskId: number) {
@@ -137,9 +109,7 @@ export function TaskCenterPage() {
     setMessage(null);
     try {
       const result = await runDueTasks("xhs");
-      setMessage(
-        `到期任务执行完成：执行 ${result.executed_count} 个，失败 ${result.failed_count} 个。`
-      );
+      setMessage(`到期任务执行完成：执行 ${result.executed_count} 个，失败 ${result.failed_count} 个。`);
       await loadTasks();
     } catch {
       setMessage("到期任务执行失败。");
@@ -161,18 +131,14 @@ export function TaskCenterPage() {
       dataIndex: "status",
       key: "status",
       width: 100,
-      render: (status: string) => (
-        <Tag color={statusColor(status)}>{status}</Tag>
-      ),
+      render: (status: string) => <Tag color={statusColor(status)}>{status}</Tag>,
     },
     {
       title: "进度",
       dataIndex: "progress",
       key: "progress",
       width: 160,
-      render: (progress: number) => (
-        <Progress percent={progress} size="small" />
-      ),
+      render: (progress: number) => <Progress percent={progress} size="small" />,
     },
     {
       title: "创建时间",
@@ -190,10 +156,7 @@ export function TaskCenterPage() {
           <Button
             size="small"
             icon={<CloseCircleOutlined />}
-            disabled={
-              isActionLoading ||
-              !["pending", "running"].includes(record.status)
-            }
+            disabled={isActionLoading || !["pending", "running"].includes(record.status)}
             onClick={() => cancelSelectedTask(record.id)}
           >
             取消
@@ -221,60 +184,26 @@ export function TaskCenterPage() {
         description="抓取、AI、导出和发布任务的统一队列。"
         action={
           <Space>
-            <Button
-              icon={<ThunderboltOutlined />}
-              onClick={runDueXhsTasks}
-              disabled={isLoading || isActionLoading}
-            >
+            <Button icon={<ThunderboltOutlined />} onClick={runDueXhsTasks} disabled={isLoading || isActionLoading}>
               执行到期任务
             </Button>
-            <Button
-              icon={<ReloadOutlined />}
-              onClick={loadTasks}
-              loading={isLoading}
-            >
+            <Button icon={<ReloadOutlined />} onClick={loadTasks} loading={isLoading}>
               刷新
             </Button>
           </Space>
         }
       />
 
-      {error && (
-        <Alert
-          type="error"
-          message={error}
-          showIcon
-          closable
-          style={{ marginBottom: 16 }}
-        />
-      )}
-      {message && (
-        <Alert
-          type="info"
-          message={message}
-          showIcon
-          closable
-          style={{ marginBottom: 16 }}
-        />
-      )}
+      {error && <Alert type="error" message={error} showIcon closable style={{ marginBottom: 16 }} />}
+      {message && <Alert type="info" message={message} showIcon closable style={{ marginBottom: 16 }} />}
 
       {schedulerStatus && (
         <Card
           title={
             <Space>
               <Text>后台调度</Text>
-              <Tag
-                color={
-                  schedulerStatus.enabled && schedulerStatus.running
-                    ? "success"
-                    : "default"
-                }
-              >
-                {schedulerStatus.enabled
-                  ? schedulerStatus.running
-                    ? "运行中"
-                    : "已启用"
-                  : "未启用"}
+              <Tag color={schedulerStatus.enabled && schedulerStatus.running ? "success" : "default"}>
+                {schedulerStatus.enabled ? (schedulerStatus.running ? "运行中" : "已启用") : "未启用"}
               </Tag>
             </Space>
           }
@@ -282,48 +211,25 @@ export function TaskCenterPage() {
         >
           <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
             <Col xs={12} sm={6}>
-              <Statistic
-                title="运行状态"
-                value={schedulerStatus.running ? "Running" : "Stopped"}
-                prefix={<DashboardOutlined />}
-              />
+              <Statistic title="运行状态" value={schedulerStatus.running ? "Running" : "Stopped"} prefix={<DashboardOutlined />} />
             </Col>
             <Col xs={12} sm={6}>
-              <Statistic
-                title="调度间隔"
-                value={schedulerStatus.interval_seconds}
-                suffix="s"
-                prefix={<ClockCircleOutlined />}
-              />
+              <Statistic title="调度间隔" value={schedulerStatus.interval_seconds} suffix="s" prefix={<ClockCircleOutlined />} />
             </Col>
             <Col xs={12} sm={6}>
-              <Statistic
-                title="注册任务"
-                value={schedulerStatus.jobs.length}
-                prefix={<SyncOutlined />}
-              />
+              <Statistic title="注册任务" value={schedulerStatus.jobs.length} prefix={<SyncOutlined />} />
             </Col>
             <Col xs={12} sm={6}>
-              <Statistic
-                title="最近记录"
-                value={schedulerStatus.recent_tasks.length}
-                prefix={<CloseCircleOutlined />}
-              />
+              <Statistic title="最近记录" value={schedulerStatus.recent_tasks.length} prefix={<CloseCircleOutlined />} />
             </Col>
           </Row>
           {schedulerStatus.jobs.length === 0 ? (
-            <Text type="secondary">
-              调度器当前未注册后台 job。本地默认关闭，开启需设置
-              SCHEDULER_ENABLED=true。
-            </Text>
+            <Text type="secondary">调度器当前未注册后台 job。本地默认关闭，开启需设置 SCHEDULER_ENABLED=true。</Text>
           ) : (
             schedulerStatus.jobs.map((job) => (
               <div key={job.id}>
                 <Text type="secondary">
-                  {job.id} · 下次运行{" "}
-                  {job.next_run_time
-                    ? formatTaskTime(job.next_run_time)
-                    : "-"}
+                  {job.id} · 下次运行 {job.next_run_time ? formatTaskTime(job.next_run_time) : "-"}
                 </Text>
               </div>
             ))
@@ -343,20 +249,12 @@ export function TaskCenterPage() {
               <div>
                 <Text strong>暂无任务记录</Text>
                 <br />
-                <Text type="secondary">
-                  执行抓取、AI 改写或发布后，任务会出现在这里。
-                </Text>
+                <Text type="secondary">执行抓取、AI 改写或发布后，任务会出现在这里。</Text>
               </div>
             }
           />
         ) : (
-          <Table<TaskRecord>
-            columns={columns}
-            dataSource={tasks}
-            rowKey="id"
-            size="small"
-            pagination={{ pageSize: 20, size: "small" }}
-          />
+          <Table<TaskRecord> columns={columns} dataSource={tasks} rowKey="id" size="small" pagination={{ pageSize: 20, size: "small" }} />
         )}
       </Card>
     </div>

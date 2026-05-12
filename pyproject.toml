@@ -1,0 +1,116 @@
+[project]
+name = "xhs-all-in-one"
+version = "0.1.0"
+description = "小红书一站式智能运营平台"
+requires-python = ">=3.11"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 140
+extend-exclude = [
+    "node_modules",
+    "frontend",
+    "apis",
+    "static",
+    ".git",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "N",   # pep8-naming
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "SIM", # flake8-simplify
+    "ARG", # flake8-unused-arguments
+]
+ignore = [
+    "B008",  # FastAPI Depends() in function defaults is intentional
+]
+
+[tool.ruff.lint.per-file-ignores]
+"xhs_utils/*" = [
+    "E501",  # long lines from SDK signatures
+    "N802",  # function names matching XHS API convention
+    "N803",  # argument names matching XHS API convention
+    "N806",  # variable names matching XHS API convention
+    "UP015", # unnecessary mode argument (SDK legacy)
+    "F541",  # f-string without placeholders
+    "F401",  # unused imports (SDK compatibility)
+    "SIM105", # suppress pattern (intentional)
+    "SIM108", # ternary operator preference
+    "W292",  # no newline at end of file
+]
+"spider/*" = [
+    "E501",  # long lines
+    "N801",  # class naming convention
+]
+"tests/*" = [
+    "SIM115", # open() without context manager in tests
+    "ARG001", # unused *args/**kwargs in test mocks
+    "ARG002", # unused arguments in test mocks
+    "F841",   # unused variables in tests
+    "N806",   # variable naming in test functions
+    "UP012",  # unnecessary encoding argument
+]
+"backend/alembic/*" = [
+    "W291",   # trailing whitespace in auto-generated files
+]
+"backend/app/services/scheduler_service.py" = [
+    "E402",   # import at bottom for late import / circular import avoidance
+    "E501",   # long Chinese strings
+]
+"backend/app/core/database.py" = [
+    "ARG001", # SQLAlchemy event listener signature
+]
+"backend/app/services/ai_service.py" = [
+    "ARG002", # method signature compatibility
+    "E501",   # long lines
+]
+"backend/app/api/notes.py" = [
+    "E501",   # slightly long expression
+]
+"backend/app/api/platforms/xhs/analytics.py" = [
+    "E501",   # long lambda expression
+]
+"backend/app/api/platforms/xhs/benchmark_accounts.py" = [
+    "E501",   # slightly long expressions
+]
+"backend/app/api/platforms/xhs/creator.py" = [
+    "B904",   # raise from exc in exception handler (intentional)
+]
+"backend/app/api/publish.py" = [
+    "B904",   # raise from exc in exception handler (intentional)
+]
+"backend/app/core/platforms.py" = [
+    "UP042",  # str+Enum for Pydantic v1 compatibility
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true
+warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+disallow_any_unimported = false
+
+[[tool.mypy.overrides]]
+module = ["apis.*"]
+follow_imports = "skip"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = ["xhs_utils.*"]
+follow_imports = "skip"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = ["spider.*"]
+ignore_errors = true

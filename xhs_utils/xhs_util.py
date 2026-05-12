@@ -6,13 +6,14 @@ import time
 from urllib.parse import urlencode
 
 import execjs
+
 from xhs_utils.cookie_util import trans_cookies
 
 _STATIC_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'static'))
 
 
 def _compile_static_js(filename):
-    with open(os.path.join(_STATIC_DIR, filename), 'r', encoding='utf-8') as f:
+    with open(os.path.join(_STATIC_DIR, filename), encoding='utf-8') as f:
         return execjs.compile(f.read())
 
 
@@ -26,7 +27,7 @@ def _get_static_js(filename):
 
 def generate_x_b3_traceid(len=16):
     x_b3_traceid = ""
-    for t in range(len):
+    for _t in range(len):
         x_b3_traceid += "abcdef0123456789"[math.floor(16 * random.random())]
     return x_b3_traceid
 

@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
@@ -10,11 +9,10 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from backend.app.api.platforms.xhs.pc import get_xhs_pc_api_adapter_factory
-from backend.app.api.tasks import serialize_task
 from backend.app.core.database import get_db
 from backend.app.core.deps import get_current_user
 from backend.app.core.time import shanghai_now
-from backend.app.models import MonitoringSnapshot, MonitoringTarget, Note, PlatformAccount, Task, User
+from backend.app.models import MonitoringSnapshot, MonitoringTarget, Note, PlatformAccount, User
 from backend.app.schemas.common import paginated
 from backend.app.services.monitoring_crawl_service import execute_monitoring_refresh
 
@@ -27,14 +25,14 @@ class MonitoringTargetCreateRequest(BaseModel):
     value: str = Field(min_length=1, max_length=512)
     status: Literal["active", "paused"] = "active"
     config: dict[str, Any] = Field(default_factory=dict)
-    platform_account_id: Optional[int] = None
+    platform_account_id: int | None = None
 
 
 class MonitoringTargetUpdateRequest(BaseModel):
-    name: Optional[str] = Field(default=None, max_length=512)
-    value: Optional[str] = Field(default=None, min_length=1, max_length=512)
-    status: Optional[Literal["active", "paused"]] = None
-    config: Optional[dict[str, Any]] = None
+    name: str | None = Field(default=None, max_length=512)
+    value: str | None = Field(default=None, min_length=1, max_length=512)
+    status: Literal["active", "paused"] | None = None
+    config: dict[str, Any] | None = None
 
 
 def _serialize_target(target: MonitoringTarget) -> dict[str, Any]:

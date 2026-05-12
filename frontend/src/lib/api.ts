@@ -73,10 +73,9 @@ import type {
   XhsNoteSearchResponse,
   XhsDataCrawlItem,
   XhsDataCrawlPayload,
-  XhsDataCrawlResponse,
   XhsSearchOptions,
   XhsSearchNote,
-  XhsQrLoginSession
+  XhsQrLoginSession,
 } from "../types";
 
 const http = axios.create({
@@ -151,7 +150,7 @@ http.interceptors.response.use(
       message.error("登录已过期，请重新登录");
       return Promise.reject(refreshError);
     }
-  }
+  },
 );
 
 export async function login(credentials: AuthCredentials): Promise<AuthPayload> {
@@ -171,7 +170,7 @@ export async function refreshAccessToken(): Promise<string> {
   }
 
   const response = await http.post<{ access_token: string; token_type: "bearer" }>("/auth/refresh", {
-    refresh_token: refreshToken
+    refresh_token: refreshToken,
   });
   setAccessToken(response.data.access_token);
   return response.data.access_token;
@@ -235,17 +234,13 @@ export async function fetchXhsBenchmarks(): Promise<BenchmarkOverview> {
 }
 
 export async function createBenchmarkDrafts(targetId: number, limit = 5): Promise<BenchmarkCreateDraftsResponse> {
-  const response = await http.post<BenchmarkCreateDraftsResponse>(
-    `/xhs/analytics/benchmarks/${targetId}/create-drafts`,
-    null,
-    { params: { limit } }
-  );
+  const response = await http.post<BenchmarkCreateDraftsResponse>(`/xhs/analytics/benchmarks/${targetId}/create-drafts`, null, {
+    params: { limit },
+  });
   return response.data;
 }
 
-export async function createXhsAnalyticsReport(
-  payload: AnalyticsReportPayload = { format: "json" }
-): Promise<AnalyticsReportResponse> {
+export async function createXhsAnalyticsReport(payload: AnalyticsReportPayload = { format: "json" }): Promise<AnalyticsReportResponse> {
   const response = await http.post<AnalyticsReportResponse>("/xhs/analytics/reports", payload);
   return response.data;
 }
@@ -310,7 +305,7 @@ export async function reorderNoteAssets(noteId: number, assetIds: number[]): Pro
 
 export async function fetchSavedNoteComments(noteId: number, page = 1): Promise<Paginated<NoteComment>> {
   const response = await http.get<Paginated<NoteComment>>(`/notes/${noteId}/comments`, {
-    params: { page, page_size: 50 }
+    params: { page, page_size: 50 },
   });
   return response.data;
 }
@@ -335,9 +330,7 @@ export async function batchTagNotes(payload: BatchTagNotesPayload): Promise<Batc
   return response.data;
 }
 
-export async function batchCreateDraftsFromNotes(
-  payload: BatchCreateDraftsPayload
-): Promise<BatchCreateDraftsResponse> {
+export async function batchCreateDraftsFromNotes(payload: BatchCreateDraftsPayload): Promise<BatchCreateDraftsResponse> {
   const response = await http.post<BatchCreateDraftsResponse>("/notes/batch-create-drafts", payload);
   return response.data;
 }
@@ -414,6 +407,7 @@ export async function crawlXhsDataStream(
   const decoder = new TextDecoder();
   let buffer = "";
   let result = { total: 0, success_count: 0, failed_count: 0 };
+  // eslint-disable-next-line no-constant-condition
   while (true) {
     const { done, value } = await reader.read();
     if (done) break;
@@ -427,8 +421,11 @@ export async function crawlXhsDataStream(
         if (event.type === "item") onItem(event.index, event.item);
         else if (event.type === "progress") onProgress?.(event.message);
         else if (event.type === "error") onError?.(event.message);
-        else if (event.type === "done") result = { total: event.total, success_count: event.success_count, failed_count: event.failed_count };
-      } catch { /* skip malformed events */ }
+        else if (event.type === "done")
+          result = { total: event.total, success_count: event.success_count, failed_count: event.failed_count };
+      } catch {
+        /* skip malformed events */
+      }
     }
   }
   return result;
@@ -439,23 +436,17 @@ export async function fetchXhsNoteDetail(payload: { account_id: number; url: str
   return response.data;
 }
 
-export async function fetchXhsNoteComments(payload: {
-  account_id: number;
-  note_url: string;
-}): Promise<Paginated<NoteComment>> {
+export async function fetchXhsNoteComments(payload: { account_id: number; note_url: string }): Promise<Paginated<NoteComment>> {
   const response = await http.post<{ total: number; items: NoteComment[] }>("/xhs/pc/notes/comments", payload);
   return {
     total: response.data.total,
     page: 1,
     page_size: response.data.items.length,
-    items: response.data.items
+    items: response.data.items,
   };
 }
 
-export async function saveXhsNotesToLibrary(payload: {
-  account_id: number;
-  notes: XhsSearchNote[];
-}): Promise<SaveNotesResponse> {
+export async function saveXhsNotesToLibrary(payload: { account_id: number; notes: XhsSearchNote[] }): Promise<SaveNotesResponse> {
   const response = await http.post<SaveNotesResponse>("/notes/batch-save", payload);
   return response.data;
 }
@@ -470,7 +461,10 @@ export async function fetchDrafts(platform = "xhs"): Promise<Paginated<Draft>> {
   return response.data;
 }
 
-export async function updateDraft(draftId: number, payload: { title?: string; body?: string; tags?: { id?: string; name: string }[] }): Promise<Draft> {
+export async function updateDraft(
+  draftId: number,
+  payload: { title?: string; body?: string; tags?: { id?: string; name: string }[] },
+): Promise<Draft> {
   const response = await http.patch<Draft>(`/drafts/${draftId}`, payload);
   return response.data;
 }
@@ -494,7 +488,10 @@ export async function fetchDraftAssets(draftId: number): Promise<{ items: DraftA
   return response.data;
 }
 
-export async function addDraftAsset(draftId: number, payload: { asset_type: string; url?: string; local_path?: string }): Promise<DraftAsset> {
+export async function addDraftAsset(
+  draftId: number,
+  payload: { asset_type: string; url?: string; local_path?: string },
+): Promise<DraftAsset> {
   const response = await http.post<DraftAsset>(`/drafts/${draftId}/assets`, payload);
   return response.data;
 }
@@ -503,7 +500,11 @@ export async function deleteDraftAsset(draftId: number, assetId: number): Promis
   await http.delete(`/drafts/${draftId}/assets/${assetId}`);
 }
 
-export async function updateDraftAsset(draftId: number, assetId: number, payload: { url?: string; local_path?: string }): Promise<DraftAsset> {
+export async function updateDraftAsset(
+  draftId: number,
+  assetId: number,
+  payload: { url?: string; local_path?: string },
+): Promise<DraftAsset> {
   const response = await http.patch<DraftAsset>(`/drafts/${draftId}/assets/${assetId}`, payload);
   return response.data;
 }
@@ -587,7 +588,7 @@ export async function resizeImageUtility(payload: ResizeImagePayload): Promise<I
 
 export async function fetchModelConfigs(modelType?: ModelType): Promise<Paginated<ModelConfig>> {
   const response = await http.get<Paginated<ModelConfig>>("/model-configs", {
-    params: modelType ? { model_type: modelType } : undefined
+    params: modelType ? { model_type: modelType } : undefined,
   });
   return response.data;
 }
@@ -619,7 +620,7 @@ export async function deleteModelConfig(configId: number): Promise<{ id: number;
 
 export async function fetchTasks(platform?: string): Promise<Paginated<TaskRecord>> {
   const response = await http.get<Paginated<TaskRecord>>("/tasks", {
-    params: platform ? { platform } : undefined
+    params: platform ? { platform } : undefined,
   });
   return response.data;
 }
@@ -654,10 +655,7 @@ export async function createMonitoringTarget(payload: MonitoringTargetPayload): 
   return response.data;
 }
 
-export async function updateMonitoringTarget(
-  targetId: number,
-  payload: Partial<MonitoringTargetPayload>
-): Promise<MonitoringTarget> {
+export async function updateMonitoringTarget(targetId: number, payload: Partial<MonitoringTargetPayload>): Promise<MonitoringTarget> {
   const response = await http.patch<MonitoringTarget>(`/xhs/monitoring/targets/${targetId}`, payload);
   return response.data;
 }
@@ -673,16 +671,12 @@ export async function refreshMonitoringTarget(targetId: number): Promise<Monitor
 }
 
 export async function fetchMonitoringSnapshots(targetId: number): Promise<{ target_id: number; items: MonitoringSnapshot[] }> {
-  const response = await http.get<{ target_id: number; items: MonitoringSnapshot[] }>(
-    `/xhs/monitoring/targets/${targetId}/snapshots`
-  );
+  const response = await http.get<{ target_id: number; items: MonitoringSnapshot[] }>(`/xhs/monitoring/targets/${targetId}/snapshots`);
   return response.data;
 }
 
 export async function fetchMonitoringTargetNotes(targetId: number): Promise<{ target_id: number; items: MonitoringNote[] }> {
-  const response = await http.get<{ target_id: number; items: MonitoringNote[] }>(
-    `/xhs/monitoring/targets/${targetId}/notes`
-  );
+  const response = await http.get<{ target_id: number; items: MonitoringNote[] }>(`/xhs/monitoring/targets/${targetId}/notes`);
   return response.data;
 }
 
@@ -740,6 +734,7 @@ export async function crawlBenchmarkAccountPopularNotes(
   if (!reader) throw new Error("No response stream");
   const decoder = new TextDecoder();
   let buffer = "";
+  // eslint-disable-next-line no-constant-condition
   while (true) {
     const { done, value } = await reader.read();
     if (done) break;
@@ -762,13 +757,23 @@ export async function crawlBenchmarkAccountPopularNotes(
             source: event.item?.source ?? "",
             status: event.item?.status ?? "failed",
             error: event.item?.error,
-            note: event.item?.note ? { title: event.item.note.title, likes: event.item.note.likes, collects: event.item.note.collects, comments: event.item.note.comments, shares: event.item.note.shares } : undefined,
+            note: event.item?.note
+              ? {
+                  title: event.item.note.title,
+                  likes: event.item.note.likes,
+                  collects: event.item.note.collects,
+                  comments: event.item.note.comments,
+                  shares: event.item.note.shares,
+                }
+              : undefined,
           });
         }
         if (event.type === "error") {
           onError(event.message);
         }
-      } catch { /* skip malformed events */ }
+      } catch {
+        /* skip malformed events */
+      }
     }
   }
   return null;
@@ -802,16 +807,13 @@ export async function configureBenchmarkAutoScan(payload: {
   crawl_interval_minutes: number;
   account_id: number;
 }): Promise<MonitoringTarget> {
-  const response = await http.post<MonitoringTarget>(
-    `/xhs/benchmark-accounts/${payload.target_id}/auto-scan-config`,
-    {
-      enabled: payload.enabled,
-      scan_interval_hours: payload.scan_interval_hours,
-      recent_hours: payload.recent_hours,
-      crawl_interval_minutes: payload.crawl_interval_minutes,
-      account_id: payload.account_id,
-    },
-  );
+  const response = await http.post<MonitoringTarget>(`/xhs/benchmark-accounts/${payload.target_id}/auto-scan-config`, {
+    enabled: payload.enabled,
+    scan_interval_hours: payload.scan_interval_hours,
+    recent_hours: payload.recent_hours,
+    crawl_interval_minutes: payload.crawl_interval_minutes,
+    account_id: payload.account_id,
+  });
   return response.data;
 }
 
@@ -830,10 +832,7 @@ export async function fetchKeywordGroup(groupId: number): Promise<KeywordGroupDe
   return response.data;
 }
 
-export async function updateKeywordGroup(
-  groupId: number,
-  payload: Partial<KeywordGroupPayload>
-): Promise<KeywordGroup> {
+export async function updateKeywordGroup(groupId: number, payload: Partial<KeywordGroupPayload>): Promise<KeywordGroup> {
   const response = await http.patch<KeywordGroup>(`/keyword-groups/${groupId}`, payload);
   return response.data;
 }
@@ -904,7 +903,7 @@ export async function importXhsCookieAccount(payload: {
 }): Promise<PlatformAccount> {
   const response = await http.post<PlatformAccount>("/accounts/import-cookie", {
     platform: "xhs",
-    ...payload
+    ...payload,
   });
   return response.data;
 }
@@ -919,9 +918,7 @@ export async function deleteAccount(accountId: number): Promise<{ id: number; st
   return response.data;
 }
 
-export async function createXhsPcQrLoginSession(payload?: {
-  sync_creator?: boolean;
-}): Promise<XhsQrLoginSession> {
+export async function createXhsPcQrLoginSession(payload?: { sync_creator?: boolean }): Promise<XhsQrLoginSession> {
   const response = await http.post<XhsQrLoginSession>("/xhs/login-sessions/pc/qrcode", payload ?? {});
   return response.data;
 }
@@ -943,7 +940,7 @@ export async function sendXhsPhoneCode(payload: {
 }): Promise<{ session_id: number; status: string; message: string }> {
   const response = await http.post<{ session_id: number; status: string; message: string }>(
     `/xhs/login-sessions/${payload.sub_type}/phone/send-code`,
-    { phone: payload.phone, sync_creator: payload.sync_creator }
+    { phone: payload.phone, sync_creator: payload.sync_creator },
   );
   return response.data;
 }
@@ -959,12 +956,16 @@ export async function confirmXhsPhoneLogin(payload: {
     session_id: payload.session_id,
     phone: payload.phone,
     code: payload.code,
-    sync_creator: payload.sync_creator
+    sync_creator: payload.sync_creator,
   });
   return response.data;
 }
 
-export async function fetchNotifications(params?: { unread?: boolean; page?: number; page_size?: number }): Promise<Paginated<AppNotification>> {
+export async function fetchNotifications(params?: {
+  unread?: boolean;
+  page?: number;
+  page_size?: number;
+}): Promise<Paginated<AppNotification>> {
   const response = await http.get<Paginated<AppNotification>>("/notifications", { params });
   return response.data;
 }

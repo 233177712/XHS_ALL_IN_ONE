@@ -6,8 +6,7 @@ import hmac
 import json
 import os
 import secrets
-from datetime import datetime, timedelta, timezone
-from typing import Optional
+from datetime import UTC, datetime, timedelta
 
 from cryptography.fernet import Fernet
 from fastapi import HTTPException, status
@@ -42,7 +41,7 @@ def _base64url_encode(value: bytes) -> str:
 
 def _base64url_decode(value: str) -> bytes:
     padding = "=" * (-len(value) % 4)
-    return base64.urlsafe_b64decode(f"{value}{padding}".encode("utf-8"))
+    return base64.urlsafe_b64decode(f"{value}{padding}".encode())
 
 
 def _sign_token(payload: dict) -> str:
@@ -58,7 +57,7 @@ def _sign_token(payload: dict) -> str:
 
 
 def _create_token(user_id: int, expires_delta: timedelta, token_type: str) -> str:
-    expires_at = datetime.now(timezone.utc) + expires_delta
+    expires_at = datetime.now(UTC) + expires_delta
     payload = {"user_id": user_id, "token_type": token_type, "exp": int(expires_at.timestamp())}
     return _sign_token(payload)
 
@@ -98,7 +97,7 @@ def decode_token(token: str) -> dict:
         raise credentials_exception from exc
 
     expires_at = payload.get("exp")
-    if not isinstance(expires_at, int) or expires_at < int(datetime.now(timezone.utc).timestamp()):
+    if not isinstance(expires_at, int) or expires_at < int(datetime.now(UTC).timestamp()):
         raise credentials_exception
     if not isinstance(payload.get("user_id"), int):
         raise credentials_exception
@@ -112,7 +111,7 @@ def _derive_fernet_key(secret: str) -> bytes:
 
 def get_fernet() -> Fernet:
     settings = get_settings()
-    key: Optional[str] = settings.fernet_key or None
+    key: str | None = settings.fernet_key or None
     return Fernet(key.encode("utf-8") if key else _derive_fernet_key(settings.secret_key))
 
 

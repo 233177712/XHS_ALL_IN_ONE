@@ -340,6 +340,7 @@ class OpenAICompatibleImageClient:
         if url.startswith("/api/files/media/"):
             import base64
             from pathlib import Path
+
             from backend.app.core.config import get_settings
             file_name = url.split("/")[-1]
             local = Path(get_settings().storage_dir) / "media" / file_name

@@ -90,19 +90,13 @@ export function XhsBenchmarksPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [latestSnapshots, setLatestSnapshots] = useState<Record<number, MonitoringSnapshot>>({});
 
-  const pcAccounts = accounts.filter(
-    (a) => a.platform === "xhs" && a.sub_type === "pc"
-  );
-  const activePcAccounts = pcAccounts.filter((a) => a.status === "active");
-
+  const pcAccounts = accounts.filter((a) => a.platform === "xhs" && a.sub_type === "pc");
   const loadTargets = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
       const result = await fetchMonitoringTargets();
-      const noteUrlTargets = result.items.filter(
-        (t) => t.target_type === "note_url"
-      );
+      const noteUrlTargets = result.items.filter((t) => t.target_type === "note_url");
       setTargets(noteUrlTargets);
 
       // Load latest snapshot for each target
@@ -117,7 +111,7 @@ export function XhsBenchmarksPage() {
           } catch {
             // ignore individual snapshot failures
           }
-        })
+        }),
       );
       setLatestSnapshots(snapshotEntries);
     } catch {
@@ -132,9 +126,7 @@ export function XhsBenchmarksPage() {
     try {
       const loaded = await fetchAccounts("xhs");
       setAccounts(loaded);
-      const firstActive = loaded.find(
-        (a) => a.platform === "xhs" && a.sub_type === "pc" && a.status === "active"
-      );
+      const firstActive = loaded.find((a) => a.platform === "xhs" && a.sub_type === "pc" && a.status === "active");
       setNewAccountId((c) => c ?? firstActive?.id ?? null);
     } catch {
       setAccounts([]);
@@ -179,9 +171,7 @@ export function XhsBenchmarksPage() {
     try {
       const result = await refreshMonitoringTarget(targetId);
       // Update the target in state
-      setTargets((prev) =>
-        prev.map((t) => (t.id === targetId ? result.target : t))
-      );
+      setTargets((prev) => prev.map((t) => (t.id === targetId ? result.target : t)));
       // Update the latest snapshot
       if (result.snapshot) {
         setLatestSnapshots((prev) => ({ ...prev, [targetId]: result.snapshot }));
@@ -257,29 +247,25 @@ export function XhsBenchmarksPage() {
       title: "赞",
       key: "likes",
       width: 80,
-      render: (_: unknown, record: MonitoringSnapshot) =>
-        extractEngagement(record).likes,
+      render: (_: unknown, record: MonitoringSnapshot) => extractEngagement(record).likes,
     },
     {
       title: "藏",
       key: "collects",
       width: 80,
-      render: (_: unknown, record: MonitoringSnapshot) =>
-        extractEngagement(record).collects,
+      render: (_: unknown, record: MonitoringSnapshot) => extractEngagement(record).collects,
     },
     {
       title: "评",
       key: "comments",
       width: 80,
-      render: (_: unknown, record: MonitoringSnapshot) =>
-        extractEngagement(record).comments,
+      render: (_: unknown, record: MonitoringSnapshot) => extractEngagement(record).comments,
     },
     {
       title: "转",
       key: "shares",
       width: 80,
-      render: (_: unknown, record: MonitoringSnapshot) =>
-        extractEngagement(record).shares,
+      render: (_: unknown, record: MonitoringSnapshot) => extractEngagement(record).shares,
     },
   ];
 
@@ -290,11 +276,7 @@ export function XhsBenchmarksPage() {
         title="竞品分析"
         description="导入笔记链接追踪互动数据变化，洞察竞品内容表现。"
         action={
-          <Button
-            icon={<ReloadOutlined />}
-            onClick={loadTargets}
-            loading={isLoading}
-          >
+          <Button icon={<ReloadOutlined />} onClick={loadTargets} loading={isLoading}>
             刷新
           </Button>
         }
@@ -342,25 +324,9 @@ export function XhsBenchmarksPage() {
         </Space>
       </Card>
 
-      {error && (
-        <Alert
-          type="error"
-          message={error}
-          showIcon
-          closable
-          onClose={() => setError(null)}
-          style={{ marginBottom: 16 }}
-        />
-      )}
+      {error && <Alert type="error" message={error} showIcon closable onClose={() => setError(null)} style={{ marginBottom: 16 }} />}
       {message && (
-        <Alert
-          type="success"
-          message={message}
-          showIcon
-          closable
-          onClose={() => setMessage(null)}
-          style={{ marginBottom: 16 }}
-        />
+        <Alert type="success" message={message} showIcon closable onClose={() => setMessage(null)} style={{ marginBottom: 16 }} />
       )}
 
       {isLoading ? (
@@ -387,11 +353,7 @@ export function XhsBenchmarksPage() {
 
             return (
               <Col xs={24} lg={12} key={target.id}>
-                <Card
-                  style={cardStyle}
-                  styles={{ body: { padding: 16 } }}
-                  hoverable
-                >
+                <Card style={cardStyle} styles={{ body: { padding: 16 } }} hoverable>
                   {/* Header row */}
                   <div
                     style={{
@@ -402,54 +364,47 @@ export function XhsBenchmarksPage() {
                     }}
                   >
                     <div style={{ flex: 1, minWidth: 0, marginRight: 8 }}>
-                      <Text
-                        strong
-                        style={{ display: "block", marginBottom: 4 }}
-                        ellipsis={{ tooltip: target.value }}
-                      >
+                      <Text strong style={{ display: "block", marginBottom: 4 }} ellipsis={{ tooltip: target.value }}>
                         {target.name || target.value}
                       </Text>
-                      <Text
-                        type="secondary"
-                        style={{ fontSize: 12 }}
-                        ellipsis={{ tooltip: target.value }}
-                      >
+                      <Text type="secondary" style={{ fontSize: 12 }} ellipsis={{ tooltip: target.value }}>
                         {target.value}
                       </Text>
                     </div>
                     <Space size={4}>
-                      {isBenchmarkSource && <Tag color="blue" icon={<RiseOutlined />}>对标</Tag>}
-                      {isViral && <Tag color="red" icon={<FireOutlined />}>潜质</Tag>}
-                      <Tag
-                        color={target.status === "active" ? "green" : "default"}
-                      >
-                        {target.status === "active" ? "监控中" : "已暂停"}
-                      </Tag>
+                      {isBenchmarkSource && (
+                        <Tag color="blue" icon={<RiseOutlined />}>
+                          对标
+                        </Tag>
+                      )}
+                      {isViral && (
+                        <Tag color="red" icon={<FireOutlined />}>
+                          潜质
+                        </Tag>
+                      )}
+                      <Tag color={target.status === "active" ? "green" : "default"}>{target.status === "active" ? "监控中" : "已暂停"}</Tag>
                     </Space>
                   </div>
 
                   {/* Meta info */}
-                  <Space
-                    size="middle"
-                    style={{ marginBottom: 12, flexWrap: "wrap" }}
-                  >
+                  <Space size="middle" style={{ marginBottom: 12, flexWrap: "wrap" }}>
                     <Text type="secondary" style={{ fontSize: 12 }}>
-                      <ClockCircleOutlined style={{ marginRight: 4 }} />
-                      每 {interval} 分钟
+                      <ClockCircleOutlined style={{ marginRight: 4 }} />每 {interval} 分钟
                     </Text>
                     <Text type="secondary" style={{ fontSize: 12 }}>
                       最近刷新：{formatShanghaiTime(target.last_refreshed_at)}
                     </Text>
-                    {target.platform_account_id && (() => {
-                      const acct = accounts.find((a) => a.id === target.platform_account_id);
-                      return (
-                        <Tooltip title={`PC 账号 ID: ${target.platform_account_id}`}>
-                          <Tag bordered={false} style={{ fontSize: 11 }} color={acct?.status === "active" ? "green" : "default"}>
-                            {acct?.nickname || `PC ${target.platform_account_id}`} · {acct?.status || "unknown"}
-                          </Tag>
-                        </Tooltip>
-                      );
-                    })()}
+                    {target.platform_account_id &&
+                      (() => {
+                        const acct = accounts.find((a) => a.id === target.platform_account_id);
+                        return (
+                          <Tooltip title={`PC 账号 ID: ${target.platform_account_id}`}>
+                            <Tag bordered={false} style={{ fontSize: 11 }} color={acct?.status === "active" ? "green" : "default"}>
+                              {acct?.nickname || `PC ${target.platform_account_id}`} · {acct?.status || "unknown"}
+                            </Tag>
+                          </Tooltip>
+                        );
+                      })()}
                   </Space>
 
                   {/* Engagement metrics */}
@@ -467,39 +422,39 @@ export function XhsBenchmarksPage() {
                       <Text type="secondary" style={{ fontSize: 12 }}>
                         赞
                       </Text>
-                      <div style={{ fontWeight: 600, fontSize: 16 }}>
-                        {eng.likes.toLocaleString()}
-                      </div>
+                      <div style={{ fontWeight: 600, fontSize: 16 }}>{eng.likes.toLocaleString()}</div>
                     </div>
                     <div style={{ textAlign: "center", flex: 1 }}>
                       <Text type="secondary" style={{ fontSize: 12 }}>
                         藏
                       </Text>
-                      <div style={{ fontWeight: 600, fontSize: 16 }}>
-                        {eng.collects.toLocaleString()}
-                      </div>
+                      <div style={{ fontWeight: 600, fontSize: 16 }}>{eng.collects.toLocaleString()}</div>
                     </div>
                     <div style={{ textAlign: "center", flex: 1 }}>
                       <Text type="secondary" style={{ fontSize: 12 }}>
                         评
                       </Text>
-                      <div style={{ fontWeight: 600, fontSize: 16 }}>
-                        {eng.comments.toLocaleString()}
-                      </div>
+                      <div style={{ fontWeight: 600, fontSize: 16 }}>{eng.comments.toLocaleString()}</div>
                     </div>
                     <div style={{ textAlign: "center", flex: 1 }}>
                       <Text type="secondary" style={{ fontSize: 12 }}>
                         转
                       </Text>
-                      <div style={{ fontWeight: 600, fontSize: 16 }}>
-                        {eng.shares.toLocaleString()}
-                      </div>
+                      <div style={{ fontWeight: 600, fontSize: 16 }}>{eng.shares.toLocaleString()}</div>
                     </div>
                   </div>
 
                   {/* Viral info */}
                   {isViral && viralVelocity > 0 && (
-                    <div style={{ padding: "6px 10px", marginBottom: 12, background: "rgba(239,68,68,0.08)", borderRadius: 6, border: "1px solid rgba(239,68,68,0.2)" }}>
+                    <div
+                      style={{
+                        padding: "6px 10px",
+                        marginBottom: 12,
+                        background: "rgba(239,68,68,0.08)",
+                        borderRadius: 6,
+                        border: "1px solid rgba(239,68,68,0.2)",
+                      }}
+                    >
                       <Space>
                         <FireOutlined style={{ color: "#ef4444" }} />
                         <Text style={{ fontSize: 12, color: "#ef4444" }}>
@@ -512,34 +467,18 @@ export function XhsBenchmarksPage() {
 
                   {/* Actions */}
                   <Space>
-                    <Button
-                      size="small"
-                      icon={<ReloadOutlined />}
-                      loading={isRefreshing}
-                      onClick={() => handleRefresh(target.id)}
-                    >
+                    <Button size="small" icon={<ReloadOutlined />} loading={isRefreshing} onClick={() => handleRefresh(target.id)}>
                       刷新
                     </Button>
-                    <Popconfirm
-                      title="确认删除此监控目标？"
-                      onConfirm={() => handleDelete(target.id)}
-                      okText="删除"
-                      cancelText="取消"
-                    >
-                      <Button
-                        size="small"
-                        danger
-                        icon={<DeleteOutlined />}
-                      >
+                    <Popconfirm title="确认删除此监控目标？" onConfirm={() => handleDelete(target.id)} okText="删除" cancelText="取消">
+                      <Button size="small" danger icon={<DeleteOutlined />}>
                         删除
                       </Button>
                     </Popconfirm>
                     <Button
                       size="small"
                       type="text"
-                      icon={
-                        isExpanded ? <DownOutlined /> : <RightOutlined />
-                      }
+                      icon={isExpanded ? <DownOutlined /> : <RightOutlined />}
                       onClick={() => handleToggleExpand(target.id)}
                     >
                       历史快照
@@ -553,12 +492,8 @@ export function XhsBenchmarksPage() {
                         <div style={{ textAlign: "center", padding: 24 }}>
                           <Spin size="small" />
                         </div>
-                      ) : !snapshots[target.id] ||
-                        snapshots[target.id].length === 0 ? (
-                        <Empty
-                          image={Empty.PRESENTED_IMAGE_SIMPLE}
-                          description="暂无快照数据"
-                        />
+                      ) : !snapshots[target.id] || snapshots[target.id].length === 0 ? (
+                        <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无快照数据" />
                       ) : (
                         <Table
                           dataSource={snapshots[target.id]}

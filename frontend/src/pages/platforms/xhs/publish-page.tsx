@@ -120,7 +120,10 @@ export function XhsPublishPage() {
   const canPublish = Boolean(selectedJob && readyChecks.every((check) => check.ok));
 
   function parseTopics(value: string): string[] {
-    return value.split(/[,\n，]/).map((item) => item.trim()).filter(Boolean);
+    return value
+      .split(/[,\n，]/)
+      .map((item) => item.trim())
+      .filter(Boolean);
   }
 
   function applyJob(job: PublishJob) {
@@ -243,7 +246,9 @@ export function XhsPublishPage() {
         const refreshed = await fetchPublishJob(selectedJob.id);
         setJobs((current) => current.map((job) => (job.id === refreshed.id ? refreshed : job)));
         setSelectedJobId(refreshed.id);
-      } catch { /* keep original error */ }
+      } catch {
+        /* keep original error */
+      }
     } finally {
       setIsPublishing(false);
     }
@@ -269,6 +274,7 @@ export function XhsPublishPage() {
   useEffect(() => {
     void loadJobs();
     void loadAccounts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const scheduledDayjs: Dayjs | null = scheduledAt ? dayjs(scheduledAt) : null;
@@ -303,7 +309,9 @@ export function XhsPublishPage() {
             imageStyle={{ height: 64 }}
             description={
               <div>
-                <Text strong style={{ fontSize: 16 }}>暂无发布任务</Text>
+                <Text strong style={{ fontSize: 16 }}>
+                  暂无发布任务
+                </Text>
                 <br />
                 <Text type="secondary">在草稿工坊中将草稿送入发布中心，或通过自动运营生成发布任务。</Text>
               </div>
@@ -348,14 +356,20 @@ export function XhsPublishPage() {
                     }}
                   >
                     <List.Item.Meta
-                      title={<Text ellipsis style={{ maxWidth: "100%", color: "#e8e8e8" }}>{job.title || "未命名"}</Text>}
+                      title={
+                        <Text ellipsis style={{ maxWidth: "100%", color: "#e8e8e8" }}>
+                          {job.title || "未命名"}
+                        </Text>
+                      }
                       description={
                         <Space direction="vertical" size={4} style={{ width: "100%" }}>
                           <Space size={4} wrap>
                             {getStatusTag(job.status)}
                             <Tag>{job.publish_mode === "scheduled" ? "定时" : "即时"}</Tag>
                           </Space>
-                          <Text type="secondary" style={{ fontSize: 11 }}>{formatShanghaiTime(job.created_at)}</Text>
+                          <Text type="secondary" style={{ fontSize: 11 }}>
+                            {formatShanghaiTime(job.created_at)}
+                          </Text>
                         </Space>
                       }
                     />
@@ -379,19 +393,37 @@ export function XhsPublishPage() {
                   <Card style={panelStyle} styles={{ body: { padding: "12px 16px" } }}>
                     <Row justify="space-between" align="middle">
                       <Col>
-                        <Title level={5} style={{ margin: 0 }}>#{selectedJob.id} {selectedJob.title || "未命名"}</Title>
+                        <Title level={5} style={{ margin: 0 }}>
+                          #{selectedJob.id} {selectedJob.title || "未命名"}
+                        </Title>
                         <Space size={8} style={{ marginTop: 4 }}>
                           {getStatusTag(selectedJob.status)}
-                          {selectedJob.publish_error && <Text type="danger" style={{ fontSize: 12 }}>{selectedJob.publish_error}</Text>}
+                          {selectedJob.publish_error && (
+                            <Text type="danger" style={{ fontSize: 12 }}>
+                              {selectedJob.publish_error}
+                            </Text>
+                          )}
                         </Space>
                       </Col>
                       <Col>
                         <Space>
-                          <Button icon={<SaveOutlined />} onClick={handleSave} loading={isSaving}>保存参数</Button>
+                          <Button icon={<SaveOutlined />} onClick={handleSave} loading={isSaving}>
+                            保存参数
+                          </Button>
                           <Popconfirm title="确定删除此发布任务？" onConfirm={handleDeleteJob}>
-                            <Button danger icon={<DeleteOutlined />}>删除</Button>
+                            <Button danger icon={<DeleteOutlined />}>
+                              删除
+                            </Button>
                           </Popconfirm>
-                          <Button type="primary" icon={<SendOutlined />} onClick={handlePublish} loading={isPublishing} disabled={!canPublish}>发布</Button>
+                          <Button
+                            type="primary"
+                            icon={<SendOutlined />}
+                            onClick={handlePublish}
+                            loading={isPublishing}
+                            disabled={!canPublish}
+                          >
+                            发布
+                          </Button>
                         </Space>
                       </Col>
                     </Row>
@@ -401,12 +433,23 @@ export function XhsPublishPage() {
                     {/* Content Preview (read-only) */}
                     <Col xs={24} md={14}>
                       <Card
-                        title={<Space><EyeOutlined /><span>内容预览</span></Space>}
+                        title={
+                          <Space>
+                            <EyeOutlined />
+                            <span>内容预览</span>
+                          </Space>
+                        }
                         style={panelStyle}
                         styles={{ body: cardBodyStyle, header: { borderBottom: "1px solid #303030" } }}
-                        extra={<Text type="secondary" style={{ fontSize: 12 }}>内容修改请前往草稿工坊</Text>}
+                        extra={
+                          <Text type="secondary" style={{ fontSize: 12 }}>
+                            内容修改请前往草稿工坊
+                          </Text>
+                        }
                       >
-                        <Title level={5} style={{ marginBottom: 8 }}>{selectedJob.title || "未填写标题"}</Title>
+                        <Title level={5} style={{ marginBottom: 8 }}>
+                          {selectedJob.title || "未填写标题"}
+                        </Title>
                         <Paragraph style={{ whiteSpace: "pre-wrap", color: "rgba(255,255,255,.65)", fontSize: 13, marginBottom: 16 }}>
                           {selectedJob.body || "暂无正文"}
                         </Paragraph>
@@ -441,7 +484,15 @@ export function XhsPublishPage() {
                             </Text>
                             <Space wrap>
                               {videoAssets.map((asset) => (
-                                <Button key={asset.id} type="link" icon={<PlayCircleOutlined />} href={asset.file_path} target="_blank" rel="noreferrer" size="small">
+                                <Button
+                                  key={asset.id}
+                                  type="link"
+                                  icon={<PlayCircleOutlined />}
+                                  href={asset.file_path}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  size="small"
+                                >
                                   查看视频
                                 </Button>
                               ))}
@@ -451,15 +502,19 @@ export function XhsPublishPage() {
 
                         {!hasAnyAsset && <Text type="secondary">暂无素材</Text>}
 
-                        {selectedJob.publish_options?.draft_tags && Array.isArray(selectedJob.publish_options.draft_tags) && selectedJob.publish_options.draft_tags.length > 0 && (
-                          <div style={{ marginTop: 12 }}>
-                            <Space size={[4, 4]} wrap>
-                              {(selectedJob.publish_options.draft_tags as Array<{name?: string}>).map((t, i) => (
-                                <Tag key={i} color="blue">#{t.name || ""}</Tag>
-                              ))}
-                            </Space>
-                          </div>
-                        )}
+                        {selectedJob.publish_options?.draft_tags &&
+                          Array.isArray(selectedJob.publish_options.draft_tags) &&
+                          selectedJob.publish_options.draft_tags.length > 0 && (
+                            <div style={{ marginTop: 12 }}>
+                              <Space size={[4, 4]} wrap>
+                                {(selectedJob.publish_options.draft_tags as Array<{ name?: string }>).map((t, i) => (
+                                  <Tag key={i} color="blue">
+                                    #{t.name || ""}
+                                  </Tag>
+                                ))}
+                              </Space>
+                            </div>
+                          )}
                       </Card>
                     </Col>
 
@@ -467,7 +522,12 @@ export function XhsPublishPage() {
                     <Col xs={24} md={10}>
                       {/* Publish Settings */}
                       <Card
-                        title={<Space><CalendarOutlined /><span>发布参数</span></Space>}
+                        title={
+                          <Space>
+                            <CalendarOutlined />
+                            <span>发布参数</span>
+                          </Space>
+                        }
                         style={{ ...panelStyle, marginBottom: 16 }}
                         styles={{ body: cardBodyStyle, header: { borderBottom: "1px solid #303030" } }}
                       >
@@ -529,7 +589,11 @@ export function XhsPublishPage() {
                       <Card
                         title={
                           <Space>
-                            {readyChecks.every((c) => c.ok) ? <CheckCircleOutlined style={{ color: "#52c41a" }} /> : <ExclamationCircleOutlined style={{ color: "#faad14" }} />}
+                            {readyChecks.every((c) => c.ok) ? (
+                              <CheckCircleOutlined style={{ color: "#52c41a" }} />
+                            ) : (
+                              <ExclamationCircleOutlined style={{ color: "#faad14" }} />
+                            )}
                             <span>发布校验</span>
                           </Space>
                         }
@@ -542,7 +606,11 @@ export function XhsPublishPage() {
                           renderItem={(check) => (
                             <List.Item style={{ padding: "4px 0", border: "none" }}>
                               <Space>
-                                {check.ok ? <CheckCircleOutlined style={{ color: "#52c41a" }} /> : <ExclamationCircleOutlined style={{ color: "#ff4d4f" }} />}
+                                {check.ok ? (
+                                  <CheckCircleOutlined style={{ color: "#52c41a" }} />
+                                ) : (
+                                  <ExclamationCircleOutlined style={{ color: "#ff4d4f" }} />
+                                )}
                                 <Text style={{ color: check.ok ? "#8c8c8c" : "#ff4d4f", fontSize: 13 }}>{check.label}</Text>
                               </Space>
                             </List.Item>
@@ -550,7 +618,9 @@ export function XhsPublishPage() {
                         />
                         {selectedJob.external_note_id && (
                           <div style={{ marginTop: 8 }}>
-                            <Text type="secondary" style={{ fontSize: 12 }}>已发布笔记：{selectedJob.external_note_id}</Text>
+                            <Text type="secondary" style={{ fontSize: 12 }}>
+                              已发布笔记：{selectedJob.external_note_id}
+                            </Text>
                           </div>
                         )}
                       </Card>

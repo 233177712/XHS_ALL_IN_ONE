@@ -72,6 +72,7 @@ class XhsCreatorApiAdapter:
         if lower.endswith(".webp") or (len(raw_bytes) > 4 and raw_bytes[:4] == b"RIFF"):
             try:
                 import io
+
                 from PIL import Image
                 img = Image.open(io.BytesIO(raw_bytes)).convert("RGB")
                 buf = io.BytesIO()
@@ -99,6 +100,7 @@ class XhsCreatorApiAdapter:
         import json
 
         import requests
+
         from apis.xhs_creator_apis import XHS_Creator_Apis
         from xhs_utils.cookie_util import trans_cookies
         from xhs_utils.http_util import REQUEST_TIMEOUT

@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Optional
-
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 from sqlalchemy import select
@@ -27,12 +25,12 @@ class ModelConfigCreateRequest(BaseModel):
 
 
 class ModelConfigUpdateRequest(BaseModel):
-    name: Optional[str] = Field(default=None, min_length=1, max_length=128)
-    provider: Optional[str] = Field(default=None, min_length=1, max_length=64)
-    model_name: Optional[str] = Field(default=None, max_length=128)
-    base_url: Optional[str] = None
-    api_key: Optional[str] = None
-    is_default: Optional[bool] = None
+    name: str | None = Field(default=None, min_length=1, max_length=128)
+    provider: str | None = Field(default=None, min_length=1, max_length=64)
+    model_name: str | None = Field(default=None, max_length=128)
+    base_url: str | None = None
+    api_key: str | None = None
+    is_default: bool | None = None
 
 
 def _serialize_config(config: ModelConfig) -> dict:
@@ -52,7 +50,7 @@ def _default_model_name(model_type: str) -> str:
     return DEFAULT_TEXT_MODEL_NAME if model_type == "text" else ""
 
 
-def _normalize_model_name(model_type: str, model_name: Optional[str]) -> str:
+def _normalize_model_name(model_type: str, model_name: str | None) -> str:
     if model_name == "gpt5.4":
         return DEFAULT_TEXT_MODEL_NAME
     cleaned = (model_name or "").strip()
@@ -76,7 +74,7 @@ def _clear_default_for_type(db: Session, user_id: int, model_type: str) -> None:
 
 @router.get("")
 def get_model_configs(
-    model_type: Optional[str] = Query(default=None, pattern="^(text|image)$"),
+    model_type: str | None = Query(default=None, pattern="^(text|image)$"),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     current_user: User = Depends(get_current_user),

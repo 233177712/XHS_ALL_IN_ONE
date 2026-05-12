@@ -7,7 +7,6 @@ from sqlalchemy.orm import sessionmaker
 
 from backend.app.main import app
 
-
 client = TestClient(app)
 
 
@@ -40,7 +39,7 @@ def test_xhs_analytics_overview_requires_authentication(tmp_path):
 def test_backend_foundation_modules_import():
     from backend.app.core.config import get_settings
     from backend.app.core.database import Base
-    from backend.app.models import PlatformAccount, Note, Task, User
+    from backend.app.models import Note, PlatformAccount, Task, User
 
     settings = get_settings()
     assert settings.app_name == "Spider_XHS"
@@ -183,7 +182,7 @@ def test_openai_compatible_text_client_decodes_utf8_json_when_response_headers_a
         def __init__(self):
             self.content = (
                 b'{"choices":[{"message":{"content":"'
-                + "你好，今天很适合去公园散步。".encode("utf-8")
+                + "你好，今天很适合去公园散步。".encode()
                 + b'"}}]}'
             )
             self.encoding = "ISO-8859-1"
@@ -4968,7 +4967,7 @@ def test_task_execution_fields_and_retry_with_exhausted_status(tmp_path):
 def test_notifications_crud_and_trigger_helpers(tmp_path):
     from backend.app.core.database import get_db
     from backend.app.models import Notification, Task
-    from backend.app.services.notification_service import notify_task_failed, notify_task_exhausted
+    from backend.app.services.notification_service import notify_task_exhausted, notify_task_failed
 
     db_dependency = _override_database(tmp_path)
     token = _register_and_get_access_token("notif-user")

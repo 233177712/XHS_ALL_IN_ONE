@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
@@ -21,15 +21,15 @@ router = APIRouter(prefix="/publish", tags=["publish"])
 
 
 class PublishJobUpdateRequest(BaseModel):
-    title: Optional[str] = Field(default=None, max_length=256)
-    body: Optional[str] = None
-    platform_account_id: Optional[int] = None
-    publish_mode: Optional[str] = Field(default=None, pattern="^(immediate|scheduled)$")
-    scheduled_at: Optional[datetime] = None
-    topics: Optional[list[str]] = None
-    location: Optional[str] = None
-    privacy_type: Optional[int] = Field(default=None, ge=0, le=1)
-    is_private: Optional[bool] = None
+    title: str | None = Field(default=None, max_length=256)
+    body: str | None = None
+    platform_account_id: int | None = None
+    publish_mode: str | None = Field(default=None, pattern="^(immediate|scheduled)$")
+    scheduled_at: datetime | None = None
+    topics: list[str] | None = None
+    location: str | None = None
+    privacy_type: int | None = Field(default=None, ge=0, le=1)
+    is_private: bool | None = None
 
 
 class PublishAssetCreateRequest(BaseModel):
@@ -41,7 +41,7 @@ def get_creator_publish_adapter_factory():
     return XhsCreatorApiAdapter
 
 
-def _clean_topics(topics: Optional[list[str]]) -> list[str]:
+def _clean_topics(topics: list[str] | None) -> list[str]:
     if topics is None:
         return []
     return [topic.strip() for topic in topics if topic and topic.strip()]
@@ -174,7 +174,7 @@ def _extract_external_note_id(payload: dict[str, Any]) -> str:
     return ""
 
 
-def _scheduled_post_time(job: PublishJob) -> Optional[int]:
+def _scheduled_post_time(job: PublishJob) -> int | None:
     if job.publish_mode != "scheduled":
         return None
     if job.scheduled_at is None:
@@ -247,7 +247,7 @@ def _record_publish_control_task(db: Session, current_user: User, job: PublishJo
 
 @router.get("/jobs")
 def get_publish_jobs(
-    platform: Optional[str] = None,
+    platform: str | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     current_user: User = Depends(get_current_user),

@@ -53,7 +53,7 @@ export function PhoneLoginPanel({ accountType, onConfirmed }: PhoneLoginPanelPro
       const result = await sendXhsPhoneCode({
         sub_type: accountType,
         phone: phone.trim(),
-        sync_creator: accountType === "pc" ? syncCreator : undefined
+        sync_creator: accountType === "pc" ? syncCreator : undefined,
       });
       setSessionId(result.session_id);
       setStatusText("验证码已发送，请查看手机短信");
@@ -83,7 +83,7 @@ export function PhoneLoginPanel({ accountType, onConfirmed }: PhoneLoginPanelPro
         session_id: sessionId,
         phone: phone.trim(),
         code: code.trim(),
-        sync_creator: accountType === "pc" ? syncCreator : undefined
+        sync_creator: accountType === "pc" ? syncCreator : undefined,
       });
       if (result.account) {
         onConfirmed(result.account);
@@ -121,13 +121,7 @@ export function PhoneLoginPanel({ accountType, onConfirmed }: PhoneLoginPanelPro
         </Checkbox>
       ) : null}
 
-      <Button
-        block
-        icon={<MessageOutlined />}
-        onClick={handleSendCode}
-        disabled={isSending || isCoolingDown}
-        loading={isSending}
-      >
+      <Button block icon={<MessageOutlined />} onClick={handleSendCode} disabled={isSending || isCoolingDown} loading={isSending}>
         {isSending ? "发送中..." : isCoolingDown ? `${cooldownSeconds} 秒后重发` : "发送验证码"}
       </Button>
 
@@ -144,13 +138,7 @@ export function PhoneLoginPanel({ accountType, onConfirmed }: PhoneLoginPanelPro
 
       {error ? <Alert type="error" message={error} showIcon /> : null}
 
-      <Button
-        type="primary"
-        block
-        icon={<CheckCircleOutlined />}
-        onClick={handleConfirm}
-        loading={isConfirming}
-      >
+      <Button type="primary" block icon={<CheckCircleOutlined />} onClick={handleConfirm} loading={isConfirming}>
         {isConfirming ? "验证中..." : "确认绑定"}
       </Button>
     </Space>

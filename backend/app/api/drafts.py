@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
@@ -20,29 +20,29 @@ router = APIRouter(prefix="/drafts", tags=["drafts"])
 
 class DraftCreateRequest(BaseModel):
     platform: str = Field(pattern="^xhs$")
-    source_note_id: Optional[int] = None
+    source_note_id: int | None = None
     title: str = ""
     body: str = ""
     intent: str = Field(default="publish", max_length=32)
 
 
 class DraftUpdateRequest(BaseModel):
-    title: Optional[str] = None
-    body: Optional[str] = None
-    tags: Optional[list[dict]] = None
+    title: str | None = None
+    body: str | None = None
+    tags: list[dict] | None = None
 
 
 class DraftSendToPublishRequest(BaseModel):
-    platform_account_id: Optional[int] = None
+    platform_account_id: int | None = None
     publish_mode: str = Field(default="immediate", pattern="^(immediate|scheduled)$")
-    scheduled_at: Optional[datetime] = None
-    topics: Optional[list[str]] = None
-    location: Optional[str] = None
-    privacy_type: Optional[int] = Field(default=None, ge=0, le=1)
-    is_private: Optional[bool] = None
+    scheduled_at: datetime | None = None
+    topics: list[str] | None = None
+    location: str | None = None
+    privacy_type: int | None = Field(default=None, ge=0, le=1)
+    is_private: bool | None = None
 
 
-def _clean_topics(topics: Optional[list[str]]) -> list[str]:
+def _clean_topics(topics: list[str] | None) -> list[str]:
     if topics is None:
         return []
     return [topic.strip() for topic in topics if topic and topic.strip()]
@@ -105,7 +105,7 @@ def _get_owned_source_note(db: Session, current_user: User, note_id: int) -> Not
 
 @router.get("")
 def get_drafts(
-    platform: Optional[str] = None,
+    platform: str | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     current_user: User = Depends(get_current_user),
@@ -189,7 +189,7 @@ def send_draft_to_publish(
     if draft is None or draft.user_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Draft not found")
 
-    account_id: Optional[int] = None
+    account_id: int | None = None
     if payload.platform_account_id is not None:
         account = db.get(PlatformAccount, payload.platform_account_id)
         if account is None or account.user_id != current_user.id or account.platform != draft.platform:
@@ -219,10 +219,7 @@ def send_draft_to_publish(
         select(DraftAsset).where(DraftAsset.draft_id == draft.id).order_by(DraftAsset.sort_order.asc(), DraftAsset.id.asc())
     ).all()
     for da in draft_assets:
-        if da.local_path:
-            file_path = f"/api/files/media/{da.local_path}"
-        else:
-            file_path = da.url
+        file_path = f"/api/files/media/{da.local_path}" if da.local_path else da.url
         pa = PublishAsset(
             publish_job_id=job.id,
             asset_type=da.asset_type,
@@ -361,8 +358,8 @@ def delete_draft_asset(
 
 
 class DraftAssetUpdateRequest(BaseModel):
-    url: Optional[str] = Field(default=None, max_length=2048)
-    local_path: Optional[str] = Field(default=None, max_length=512)
+    url: str | None = Field(default=None, max_length=2048)
+    local_path: str | None = Field(default=None, max_length=512)
 
 
 @router.patch("/{draft_id}/assets/{asset_id}")

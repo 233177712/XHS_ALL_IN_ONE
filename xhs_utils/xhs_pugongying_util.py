@@ -1,4 +1,5 @@
-from xhs_utils.xhs_util import generate_xs_xs_common, get_request_headers_template, generate_x_b3_traceid
+from xhs_utils.xhs_util import generate_x_b3_traceid, generate_xs_xs_common, get_request_headers_template
+
 
 def get_pugongying_headers_template():
     return {

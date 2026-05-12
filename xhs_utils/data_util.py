@@ -1,5 +1,4 @@
 import json
-import os
 import re
 import time
 from pathlib import Path
@@ -80,7 +79,7 @@ def handle_note_info(data):
     avatar = data['note_card']['user']['avatar']
     title = data['note_card']['title']
     if title.strip() == '':
-        title = f'无标题'
+        title = '无标题'
     desc = data['note_card']['desc']
     liked_count = data['note_card']['interact_info']['liked_count']
     collected_count = data['note_card']['interact_info']['collected_count']
@@ -277,7 +276,7 @@ def download_note(note_info, path, save_choice):
     nickname = note_info['nickname']
     nickname = norm_str(nickname)[:20]
     if title.strip() == '':
-        title = f'无标题'
+        title = '无标题'
     save_path = str(Path(path) / f'{nickname}_{user_id}' / f'{title}_{note_id}')
     check_and_create_path(save_path)
     with open(Path(save_path) / 'info.json', mode='w', encoding='utf-8') as f:

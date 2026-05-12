@@ -1,7 +1,6 @@
 import {
   DeleteOutlined,
   FileImageOutlined,
-  InboxOutlined,
   LinkOutlined,
   PictureOutlined,
   PlusOutlined,
@@ -10,24 +9,7 @@ import {
   StarOutlined,
   UploadOutlined,
 } from "@ant-design/icons";
-import {
-  Alert,
-  Button,
-  Card,
-  Checkbox,
-  Col,
-  Empty,
-  Image,
-  Input,
-  Modal,
-  Row,
-  Space,
-  Spin,
-  Tabs,
-  Tag,
-  Typography,
-  Upload,
-} from "antd";
+import { Alert, Button, Card, Checkbox, Col, Empty, Image, Input, Modal, Row, Space, Spin, Tabs, Tag, Typography, Upload } from "antd";
 import { useEffect, useState } from "react";
 
 import { PageHeader } from "../../../components/layout/app-shell";
@@ -47,12 +29,7 @@ const { Text, Paragraph } = Typography;
 const { TextArea } = Input;
 
 function isRenderableImage(value: string): boolean {
-  return (
-    value.startsWith("http://") ||
-    value.startsWith("https://") ||
-    value.startsWith("data:image/") ||
-    value.startsWith("/api/")
-  );
+  return value.startsWith("http://") || value.startsWith("https://") || value.startsWith("data:image/") || value.startsWith("/api/");
 }
 
 export function XhsImageStudioPage() {
@@ -72,19 +49,14 @@ export function XhsImageStudioPage() {
   const [generatedPreview, setGeneratedPreview] = useState<string | null>(null);
 
   // For the reference picker modal: which callback mode
-  const [pickerMode, setPickerMode] = useState<"reference" | "describe">(
-    "reference",
-  );
+  const [pickerMode, setPickerMode] = useState<"reference" | "describe">("reference");
   const [pickerUrlInput, setPickerUrlInput] = useState("");
 
   async function loadAssets() {
     setIsLoading(true);
     setError(null);
     try {
-      const [aiResult, userResult] = await Promise.all([
-        fetchGeneratedImageAssets(),
-        fetchUserImages(),
-      ]);
+      const [aiResult, userResult] = await Promise.all([fetchGeneratedImageAssets(), fetchUserImages()]);
       setAssets(aiResult.items);
       setUserImages(userResult.items);
     } catch {
@@ -106,8 +78,7 @@ export function XhsImageStudioPage() {
     try {
       const result = await generateImageWithAi({
         prompt: prompt.trim(),
-        reference_images:
-          referenceImages.length > 0 ? referenceImages : undefined,
+        reference_images: referenceImages.length > 0 ? referenceImages : undefined,
         save_to_assets: saveToAssets,
       });
       setGeneratedPreview(result.url);
@@ -152,9 +123,7 @@ export function XhsImageStudioPage() {
 
   function handlePickerSelect(url: string) {
     if (pickerMode === "reference") {
-      setReferenceImages((prev) =>
-        prev.includes(url) ? prev : [...prev, url],
-      );
+      setReferenceImages((prev) => (prev.includes(url) ? prev : [...prev, url]));
     } else {
       setImageUrl(url);
     }
@@ -193,35 +162,15 @@ export function XhsImageStudioPage() {
         title="图片工坊"
         description="AI 图片生成、图片描述、沉淀图片资产，赋能小红书内容创作。"
         action={
-          <Button
-            icon={<ReloadOutlined />}
-            onClick={loadAssets}
-            loading={isLoading}
-          >
+          <Button icon={<ReloadOutlined />} onClick={loadAssets} loading={isLoading}>
             刷新资产
           </Button>
         }
       />
 
-      {error && (
-        <Alert
-          type="error"
-          message={error}
-          showIcon
-          closable
-          onClose={() => setError(null)}
-          style={{ marginBottom: 16 }}
-        />
-      )}
+      {error && <Alert type="error" message={error} showIcon closable onClose={() => setError(null)} style={{ marginBottom: 16 }} />}
       {message && (
-        <Alert
-          type="success"
-          message={message}
-          showIcon
-          closable
-          onClose={() => setMessage(null)}
-          style={{ marginBottom: 16 }}
-        />
+        <Alert type="success" message={message} showIcon closable onClose={() => setMessage(null)} style={{ marginBottom: 16 }} />
       )}
 
       {/* ---- Top Row: Two tool cards ---- */}
@@ -251,10 +200,7 @@ export function XhsImageStudioPage() {
 
             {/* Reference images */}
             <div style={{ marginBottom: 12 }}>
-              <Text
-                type="secondary"
-                style={{ fontSize: 12, marginBottom: 6, display: "block" }}
-              >
+              <Text type="secondary" style={{ fontSize: 12, marginBottom: 6, display: "block" }}>
                 参考图
               </Text>
               <Space size={8} wrap>
@@ -299,11 +245,7 @@ export function XhsImageStudioPage() {
                       size="small"
                       danger
                       icon={<DeleteOutlined />}
-                      onClick={() =>
-                        setReferenceImages((prev) =>
-                          prev.filter((_, i) => i !== idx),
-                        )
-                      }
+                      onClick={() => setReferenceImages((prev) => prev.filter((_, i) => i !== idx))}
                       style={{
                         position: "absolute",
                         top: 0,
@@ -339,33 +281,26 @@ export function XhsImageStudioPage() {
             </div>
 
             {/* Controls row */}
-            <Row
-              justify="space-between"
-              align="middle"
-              style={{ marginBottom: 12 }}
-            >
+            <Row justify="space-between" align="middle" style={{ marginBottom: 12 }}>
               <Col>
-                <Checkbox
-                  checked={saveToAssets}
-                  onChange={(e) => setSaveToAssets(e.target.checked)}
-                >
+                <Checkbox checked={saveToAssets} onChange={(e) => setSaveToAssets(e.target.checked)}>
                   保存到 AI 图片资产
                 </Checkbox>
               </Col>
               <Col>
                 <Space>
                   <Button
-                    onClick={() => { setPrompt(""); setReferenceImages([]); setGeneratedPreview(null); setSaveToAssets(true); }}
+                    onClick={() => {
+                      setPrompt("");
+                      setReferenceImages([]);
+                      setGeneratedPreview(null);
+                      setSaveToAssets(true);
+                    }}
                     disabled={isGenerating}
                   >
                     重置
                   </Button>
-                  <Button
-                    type="primary"
-                    icon={<RobotOutlined />}
-                    onClick={handleGenerate}
-                    loading={isGenerating}
-                  >
+                  <Button type="primary" icon={<RobotOutlined />} onClick={handleGenerate} loading={isGenerating}>
                     生成
                   </Button>
                 </Space>
@@ -375,10 +310,7 @@ export function XhsImageStudioPage() {
             {/* Generated result */}
             {generatedPreview && (
               <div style={{ marginTop: 8 }}>
-                <Text
-                  type="secondary"
-                  style={{ fontSize: 12, marginBottom: 6, display: "block" }}
-                >
+                <Text type="secondary" style={{ fontSize: 12, marginBottom: 6, display: "block" }}>
                   生成结果
                 </Text>
                 <div
@@ -389,11 +321,7 @@ export function XhsImageStudioPage() {
                     textAlign: "center",
                   }}
                 >
-                  <Image
-                    src={generatedPreview}
-                    alt="generated"
-                    style={{ maxHeight: 240, objectFit: "contain" }}
-                  />
+                  <Image src={generatedPreview} alt="generated" style={{ maxHeight: 240, objectFit: "contain" }} />
                   {!saveToAssets && (
                     <Button
                       size="small"
@@ -429,25 +357,12 @@ export function XhsImageStudioPage() {
             }
           >
             <Space.Compact style={{ width: "100%", marginBottom: 12 }}>
-              <Input
-                value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
-                placeholder="图片 URL"
-                disabled={isGenerating}
-              />
-              <Button
-                icon={<PictureOutlined />}
-                onClick={() => openRefPicker("describe")}
-              >
+              <Input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="图片 URL" disabled={isGenerating} />
+              <Button icon={<PictureOutlined />} onClick={() => openRefPicker("describe")}>
                 从资产选择
               </Button>
             </Space.Compact>
-            <Button
-              onClick={handleDescribeImage}
-              loading={isDescribing}
-              block
-              style={{ marginBottom: 12 }}
-            >
+            <Button onClick={handleDescribeImage} loading={isDescribing} block style={{ marginBottom: 12 }}>
               生成描述
             </Button>
             {description && (
@@ -485,20 +400,12 @@ export function XhsImageStudioPage() {
                     <Spin tip="正在加载 AI 图片资产..." />
                   </div>
                 ) : assets.length === 0 ? (
-                  <Empty
-                    image={Empty.PRESENTED_IMAGE_SIMPLE}
-                    description="暂无 AI 图片资产。"
-                    style={{ padding: 32 }}
-                  />
+                  <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无 AI 图片资产。" style={{ padding: 32 }} />
                 ) : (
                   <Row gutter={[12, 12]}>
                     {assets.map((asset) => (
                       <Col xs={12} sm={8} md={6} key={asset.id}>
-                        <Card
-                          size="small"
-                          hoverable
-                          styles={{ body: { padding: 8 } }}
-                        >
+                        <Card size="small" hoverable styles={{ body: { padding: 8 } }}>
                           <div
                             style={{
                               height: 120,
@@ -521,16 +428,10 @@ export function XhsImageStudioPage() {
                                 }}
                               />
                             ) : (
-                              <PictureOutlined
-                                style={{ fontSize: 28, color: "#555" }}
-                              />
+                              <PictureOutlined style={{ fontSize: 28, color: "#555" }} />
                             )}
                           </div>
-                          <Text
-                            strong
-                            ellipsis
-                            style={{ fontSize: 12, display: "block" }}
-                          >
+                          <Text strong ellipsis style={{ fontSize: 12, display: "block" }}>
                             {asset.prompt}
                           </Text>
                           <div style={{ marginTop: 4 }}>
@@ -543,20 +444,22 @@ export function XhsImageStudioPage() {
                             >
                               {asset.model_name || "image model"}
                             </Tag>
-                            <Text
-                              type="secondary"
-                              style={{ fontSize: 10, marginLeft: 4 }}
-                            >
+                            <Text type="secondary" style={{ fontSize: 10, marginLeft: 4 }}>
                               {formatShanghaiTime(asset.created_at)}
                             </Text>
                           </div>
                           <Button
-                            type="text" danger size="small" icon={<DeleteOutlined />}
+                            type="text"
+                            danger
+                            size="small"
+                            icon={<DeleteOutlined />}
                             onClick={async () => {
                               try {
                                 await deleteGeneratedImageAsset(asset.id);
                                 setAssets((prev) => prev.filter((a) => a.id !== asset.id));
-                              } catch { /* global interceptor shows error */ }
+                              } catch {
+                                /* removed */
+                              }
                             }}
                             style={{ width: "100%", marginTop: 4 }}
                           >
@@ -601,11 +504,7 @@ export function XhsImageStudioPage() {
                   <Row gutter={[12, 12]}>
                     {userImages.map((img) => (
                       <Col xs={12} sm={8} md={6} key={img.file_name}>
-                        <Card
-                          size="small"
-                          hoverable
-                          styles={{ body: { padding: 8 } }}
-                        >
+                        <Card size="small" hoverable styles={{ body: { padding: 8 } }}>
                           <div
                             style={{
                               height: 120,
@@ -627,23 +526,24 @@ export function XhsImageStudioPage() {
                               }}
                             />
                           </div>
-                          <Text
-                            strong
-                            ellipsis
-                            style={{ fontSize: 12, display: "block" }}
-                          >
+                          <Text strong ellipsis style={{ fontSize: 12, display: "block" }}>
                             {img.file_name}
                           </Text>
                           <Text type="secondary" style={{ fontSize: 10 }}>
                             {(img.size / 1024).toFixed(1)} KB
                           </Text>
                           <Button
-                            type="text" danger size="small" icon={<DeleteOutlined />}
+                            type="text"
+                            danger
+                            size="small"
+                            icon={<DeleteOutlined />}
                             onClick={async () => {
                               try {
                                 await deleteUserImage(img.file_name);
                                 setUserImages((prev) => prev.filter((i) => i.file_name !== img.file_name));
-                              } catch { /* global interceptor shows error */ }
+                              } catch {
+                                /* removed */
+                              }
                             }}
                             style={{ width: "100%", marginTop: 4 }}
                           >
@@ -661,14 +561,7 @@ export function XhsImageStudioPage() {
       />
 
       {/* ---- Reference Image Picker Modal ---- */}
-      <Modal
-        title="选择图片"
-        open={refPickerOpen}
-        onCancel={() => setRefPickerOpen(false)}
-        footer={null}
-        width={640}
-        destroyOnClose
-      >
+      <Modal title="选择图片" open={refPickerOpen} onCancel={() => setRefPickerOpen(false)} footer={null} width={640} destroyOnClose>
         <Tabs
           defaultActiveKey="user_images"
           items={[
@@ -681,11 +574,7 @@ export function XhsImageStudioPage() {
               ),
               children:
                 userImages.length === 0 ? (
-                  <Empty
-                    image={Empty.PRESENTED_IMAGE_SIMPLE}
-                    description="暂无普通图片资产。"
-                    style={{ padding: 24 }}
-                  />
+                  <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无普通图片资产。" style={{ padding: 24 }} />
                 ) : (
                   <Row gutter={[8, 8]}>
                     {userImages.map((img) => (
@@ -728,11 +617,7 @@ export function XhsImageStudioPage() {
               ),
               children:
                 assets.length === 0 ? (
-                  <Empty
-                    image={Empty.PRESENTED_IMAGE_SIMPLE}
-                    description="暂无 AI 图片资产。"
-                    style={{ padding: 24 }}
-                  />
+                  <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无 AI 图片资产。" style={{ padding: 24 }} />
                 ) : (
                   <Row gutter={[8, 8]}>
                     {assets.map((asset) => (
@@ -762,9 +647,7 @@ export function XhsImageStudioPage() {
                               }}
                             />
                           ) : (
-                            <PictureOutlined
-                              style={{ fontSize: 24, color: "#555" }}
-                            />
+                            <PictureOutlined style={{ fontSize: 24, color: "#555" }} />
                           )}
                         </div>
                       </Col>

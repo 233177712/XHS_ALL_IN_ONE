@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import random
-from typing import Any, Optional
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
@@ -47,14 +47,14 @@ class AutoTaskCreateRequest(BaseModel):
 
 
 class AutoTaskUpdateRequest(BaseModel):
-    name: Optional[str] = Field(default=None, min_length=1, max_length=128)
-    keywords: Optional[list[str]] = None
-    ai_instruction: Optional[str] = Field(default=None, max_length=2000)
-    status: Optional[str] = Field(default=None, pattern="^(active|paused|completed)$")
-    schedule_type: Optional[str] = Field(default=None, pattern="^(manual|daily|weekly|interval)$")
-    schedule_time: Optional[str] = Field(default=None, max_length=5)
-    schedule_days: Optional[str] = Field(default=None, max_length=64)
-    schedule_interval_hours: Optional[int] = Field(default=None, ge=1, le=168)
+    name: str | None = Field(default=None, min_length=1, max_length=128)
+    keywords: list[str] | None = None
+    ai_instruction: str | None = Field(default=None, max_length=2000)
+    status: str | None = Field(default=None, pattern="^(active|paused|completed)$")
+    schedule_type: str | None = Field(default=None, pattern="^(manual|daily|weekly|interval)$")
+    schedule_time: str | None = Field(default=None, max_length=5)
+    schedule_days: str | None = Field(default=None, max_length=64)
+    schedule_interval_hours: int | None = Field(default=None, ge=1, le=168)
 
 
 def _serialize_auto_task(task: AutoTask) -> dict[str, Any]:

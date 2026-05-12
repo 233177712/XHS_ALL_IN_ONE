@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, Iterable
+from collections.abc import Iterable
+from typing import Any
 
 
 def paginated(items: Iterable[Any], page: int = 1, page_size: int = 20) -> dict:

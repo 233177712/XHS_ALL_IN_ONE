@@ -12,9 +12,7 @@ export function PlatformSelector({ platforms }: { platforms: PlatformMeta[] }) {
   return (
     <Row gutter={[20, 20]}>
       {platforms.map((platform) => {
-        const href = platform.enabled
-          ? `/platforms/${platform.id}/dashboard`
-          : `/platforms/${platform.id}`;
+        const href = platform.enabled ? `/platforms/${platform.id}/dashboard` : `/platforms/${platform.id}`;
 
         return (
           <Col key={platform.id} xs={24} sm={12} md={8} lg={8}>
@@ -80,13 +78,9 @@ export function PlatformSelector({ platforms }: { platforms: PlatformMeta[] }) {
                     {platform.enabled ? "Active" : "Coming Soon"}
                   </Tag>
                   {platform.enabled ? (
-                    <ArrowRightOutlined
-                      style={{ color: "rgba(255,255,255,0.45)", fontSize: 14 }}
-                    />
+                    <ArrowRightOutlined style={{ color: "rgba(255,255,255,0.45)", fontSize: 14 }} />
                   ) : (
-                    <ClockCircleOutlined
-                      style={{ color: "rgba(255,255,255,0.25)", fontSize: 14 }}
-                    />
+                    <ClockCircleOutlined style={{ color: "rgba(255,255,255,0.25)", fontSize: 14 }} />
                   )}
                 </div>
               </div>

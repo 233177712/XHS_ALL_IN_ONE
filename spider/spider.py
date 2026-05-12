@@ -1,12 +1,13 @@
-import json
 import os
+
 from loguru import logger
+
 from apis.xhs_pc_apis import XHS_Apis
 from xhs_utils.common_util import init
-from xhs_utils.data_util import handle_note_info, download_note, save_to_xlsx
+from xhs_utils.data_util import download_note, handle_note_info, save_to_xlsx
 
 
-class Data_Spider():
+class Data_Spider:
     def __init__(self):
         self.xhs_apis = XHS_Apis()
 

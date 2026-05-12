@@ -7,12 +7,27 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from backend.app.api import accounts, ai, auth, auto_tasks, drafts, files, keyword_groups, login_sessions, model_configs, notes, notifications, publish, tags, tasks
+from backend.app.api import (
+    accounts,
+    ai,
+    auth,
+    auto_tasks,
+    drafts,
+    files,
+    keyword_groups,
+    login_sessions,
+    model_configs,
+    notes,
+    notifications,
+    publish,
+    tags,
+    tasks,
+)
 from backend.app.api.platforms import registry
 from backend.app.api.platforms.xhs import analytics, benchmark_accounts, crawl, creator, monitoring, pc
 from backend.app.core.config import get_settings
 from backend.app.core.database import init_db
-from backend.app.services.scheduler_service import run_due_auto_tasks, shutdown_due_publish_scheduler, start_due_publish_scheduler
+from backend.app.services.scheduler_service import shutdown_due_publish_scheduler, start_due_publish_scheduler
 
 
 @asynccontextmanager

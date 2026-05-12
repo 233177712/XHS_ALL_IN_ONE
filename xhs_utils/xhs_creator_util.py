@@ -3,13 +3,13 @@ import os
 
 import execjs
 
-from xhs_utils.xhs_util import generate_x_b3_traceid, generate_xray_traceid, splice_str
+from xhs_utils.xhs_util import generate_x_b3_traceid, generate_xray_traceid
 
 _STATIC_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'static'))
 
 
 def _compile_static_js(filename):
-    with open(os.path.join(_STATIC_DIR, filename), 'r', encoding='utf-8') as f:
+    with open(os.path.join(_STATIC_DIR, filename), encoding='utf-8') as f:
         return execjs.compile(f.read())
 
 

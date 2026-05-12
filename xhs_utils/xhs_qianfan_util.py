@@ -1,5 +1,7 @@
 import random
+
 from xhs_utils.xhs_util import generate_x_b3_traceid
+
 
 def get_qianfan_headers_template():
     return {

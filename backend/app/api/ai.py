@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
@@ -49,7 +49,7 @@ class PolishTextRequest(BaseModel):
 
 class GenerateCoverRequest(BaseModel):
     prompt: str = Field(min_length=1, max_length=1200)
-    draft_id: Optional[int] = None
+    draft_id: int | None = None
     size: str = Field(default="1024x1024", max_length=32)
     style: str = Field(default="clean", max_length=120)
 
