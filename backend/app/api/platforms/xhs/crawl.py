@@ -300,6 +300,7 @@ def crawl_user_note_links(
             break
 
         reached_cutoff = False
+        new_in_page = 0
         for raw_item in raw_items:
             normalized = _normalize_search_item(raw_item)
             note_id = str(normalized.get("note_id") or "").strip()
@@ -313,11 +314,15 @@ def crawl_user_note_links(
                 break
 
             seen_urls.add(note_url)
+            new_in_page += 1
             items.append(_serialize_user_note_link(normalized, timestamp_seconds))
             if len(items) >= max_notes:
                 break
 
         if len(items) >= max_notes or reached_cutoff:
+            break
+
+        if new_in_page == 0:
             break
 
         data = raw_payload.get("data") if isinstance(raw_payload, dict) and isinstance(raw_payload.get("data"), dict) else {}
