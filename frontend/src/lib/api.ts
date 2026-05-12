@@ -701,24 +701,59 @@ export async function deleteBenchmarkAccount(targetId: number): Promise<{ id: nu
   return response.data;
 }
 
-export async function crawlBenchmarkAccountPopularNotes(payload: {
-  target_id: number;
-  account_id: number;
-  recent_months: number;
-  max_notes: number;
-  request_interval_seconds: number;
-}): Promise<BenchmarkAccountCrawlResult> {
-  const response = await http.post<BenchmarkAccountCrawlResult>(
-    `/xhs/benchmark-accounts/${payload.target_id}/crawl-popular`,
-    {
+export async function crawlBenchmarkAccountPopularNotes(
+  payload: {
+    target_id: number;
+    account_id: number;
+    recent_months: number;
+    max_notes: number;
+    request_interval_seconds: number;
+  },
+  onItem: (progress: string) => void,
+  onError: (error: string) => void,
+): Promise<BenchmarkAccountCrawlResult | null> {
+  const token = getAccessToken();
+  const response = await fetch(`/api/xhs/benchmark-accounts/${payload.target_id}/crawl-popular`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    body: JSON.stringify({
       account_id: payload.account_id,
       recent_months: payload.recent_months,
       max_notes: payload.max_notes,
       request_interval_seconds: payload.request_interval_seconds,
-    },
-    { timeout: 300000 },
-  );
-  return response.data;
+    }),
+  });
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    throw new Error((body as { detail?: string }).detail || `HTTP ${response.status}`);
+  }
+  const reader = response.body?.getReader();
+  if (!reader) throw new Error("No response stream");
+  const decoder = new TextDecoder();
+  let buffer = "";
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() || "";
+    for (const line of lines) {
+      if (!line.startsWith("data: ")) continue;
+      try {
+        const event = JSON.parse(line.slice(6));
+        if (event.type === "done") {
+          return event as unknown as BenchmarkAccountCrawlResult;
+        }
+        if (event.type === "progress") {
+          onItem(event.message);
+        }
+        if (event.type === "error") {
+          onError(event.message);
+        }
+      } catch { /* skip malformed events */ }
+    }
+  }
+  return null;
 }
 
 export async function scanAndMonitorBenchmarkAccount(payload: {

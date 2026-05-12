@@ -252,18 +252,25 @@ export function BenchmarkAccountsPage() {
     setIsCrawling(true);
     setError(null);
     setMessage(null);
+    setCrawlResult(null);
     try {
-      const result = await crawlBenchmarkAccountPopularNotes({
-        target_id: activeTarget.id,
-        account_id: values.account_id,
-        recent_months: values.recent_months,
-        max_notes: values.max_notes,
-        request_interval_seconds: values.request_interval_seconds,
-      });
-      setCrawlResult(result);
-      setTargets((prev) => prev.map((target) => (target.id === result.target.id ? result.target : target)));
-      setActiveTarget(result.target);
-      setMessage(`已将 ${result.imported_count} 篇历史爆款加入内容库。`);
+      const result = await crawlBenchmarkAccountPopularNotes(
+        {
+          target_id: activeTarget.id,
+          account_id: values.account_id,
+          recent_months: values.recent_months,
+          max_notes: values.max_notes,
+          request_interval_seconds: values.request_interval_seconds,
+        },
+        (msg) => setMessage(msg),
+        (msg) => setError(msg),
+      );
+      if (result) {
+        setCrawlResult(result);
+        setTargets((prev) => prev.map((t) => (t.id === result.target.id ? result.target : t)));
+        setActiveTarget(result.target);
+        setMessage(`已将 ${result.imported_count} 篇历史爆款加入内容库。`);
+      }
     } catch {
       setError("抓取爆款失败，请确认已绑定可用的 PC 账号。");
     } finally {

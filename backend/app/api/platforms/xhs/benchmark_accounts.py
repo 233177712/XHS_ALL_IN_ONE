@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import json
+import time
 from statistics import median
-from typing import Any
+from typing import Any, Generator
 from urllib.parse import urlparse, urlunparse
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -14,8 +17,9 @@ from backend.app.api.platforms.xhs.crawl import (
     MAX_XHS_CRAWL_INTERVAL_SECONDS,
     _coerce_timestamp_seconds,
     _save_normalized_notes,
+    _sse_event,
     crawl_user_note_links,
-    execute_data_crawl,
+    iter_data_crawl_events,
 )
 from backend.app.api.platforms.xhs.monitoring import _serialize_target
 from backend.app.core.database import get_db
@@ -141,14 +145,16 @@ def _extract_benchmark_profile(raw_payload: dict[str, Any], user_id: str) -> dic
     }
 
 
-def _refresh_target_profile(db: Session, target: MonitoringTarget, account: PlatformAccount) -> MonitoringTarget:
-    cookies = _decrypt_cookies(db, account)
-    if not cookies:
-        return target
-
+def _refresh_target_profile(db: Session | None, target: MonitoringTarget, account: PlatformAccount, *, adapter: XhsPcApiAdapter | None = None) -> MonitoringTarget:
     normalized_url, user_id = _normalize_user_profile_url(target.value)
     try:
-        success, message, raw_payload = XhsPcApiAdapter(cookies).get_user_profile(normalized_url)
+        if adapter is not None:
+            success, message, raw_payload = adapter.get_user_profile(normalized_url)
+        else:
+            cookies = _decrypt_cookies(db, account) if db else None
+            if not cookies:
+                return target
+            success, message, raw_payload = XhsPcApiAdapter(cookies).get_user_profile(normalized_url)
     except Exception:
         return target
     if not success or not isinstance(raw_payload, dict):
@@ -161,7 +167,8 @@ def _refresh_target_profile(db: Session, target: MonitoringTarget, account: Plat
         "profile": profile,
     }
     target.updated_at = shanghai_now()
-    db.flush()
+    if db is not None:
+        db.flush()
     return target
 
 
@@ -392,66 +399,89 @@ def crawl_popular_notes(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="当前 PC 账号没有可用 cookies")
 
     adapter = XhsPcApiAdapter(cookies)
-    try:
-        note_links = crawl_user_note_links(
+
+    def generate() -> Generator[str, None, None]:
+        yield _sse_event({"type": "progress", "message": "正在抓取对标账号笔记列表..."})
+        try:
+            note_links = crawl_user_note_links(
+                adapter, target.value,
+                recent_months=payload.recent_months,
+                max_notes=payload.max_notes,
+                time_sleep=payload.request_interval_seconds,
+            )
+        except Exception as exc:
+            yield _sse_event({"type": "error", "message": f"笔记列表抓取失败: {exc}"})
+            return
+
+        if not note_links:
+            yield _sse_event({"type": "error", "message": "未抓取到笔记链接"})
+            return
+
+        yield _sse_event({"type": "progress", "message": f"已获取 {len(note_links)} 条笔记链接，开始抓取详情..."})
+
+        crawl_event_stream = iter_data_crawl_events(
             adapter,
-            target.value,
-            recent_months=payload.recent_months,
-            max_notes=payload.max_notes,
-            time_sleep=payload.request_interval_seconds,
+            DataCrawlRequest(
+                account_id=account.id, mode="note_urls",
+                urls=[str(link.get("note_url") or "") for link in note_links if link.get("note_url")],
+                max_notes=payload.max_notes, time_sleep=payload.request_interval_seconds, fetch_comments=False,
+            ),
         )
-    except Exception as exc:
-        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(exc)) from exc
+        error_occurred = False
+        crawl_result = None
+        while True:
+            try:
+                event = next(crawl_event_stream)
+                if event["type"] == "item" and event["item"].get("status") == "failed":
+                    error_occurred = True
+                yield _sse_event(event)
+            except StopIteration as stop:
+                crawl_result = stop.value
+                break
+        if crawl_result is None:
+            crawl_result = {"items": [], "normalized_items": [], "success_count": 0, "failed_count": 0, "error_occurred": True, "error_message": "unknown"}
 
-    crawl_result = execute_data_crawl(
-        adapter,
-        DataCrawlRequest(
-            account_id=account.id,
-            mode="note_urls",
-            urls=[str(link.get("note_url") or "") for link in note_links if link.get("note_url")],
-            max_notes=payload.max_notes,
-            time_sleep=payload.request_interval_seconds,
-            fetch_comments=False,
-        ),
-    )
-    detail_items = crawl_result["items"]
-    normalized_notes = crawl_result["normalized_items"]
-    if crawl_result["error_occurred"] and not normalized_notes:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=str(crawl_result["error_message"] or "XHS note detail crawl failed"),
-        )
+        normalized_notes = crawl_result.get("normalized_items") or []
+        if error_occurred and not normalized_notes:
+            yield _sse_event({"type": "error", "message": "笔记详情抓取失败"})
+            return
 
-    popular_notes, baseline_engagement, threshold_engagement = _pick_popular_notes(normalized_notes)
-    saved_notes = _save_normalized_notes(db, account, popular_notes) if popular_notes else []
-    _refresh_target_profile(db, target, account)
+        yield _sse_event({"type": "progress", "message": "正在分析爆款笔记..."})
 
-    target.config = {
-        **(target.config or {}),
-        "crawler_account_id": account.id,
-        "recent_months": payload.recent_months,
-        "max_notes": payload.max_notes,
-        "request_interval_seconds": payload.request_interval_seconds,
-    }
-    target.platform_account_id = account.id
-    target.last_refreshed_at = shanghai_now()
-    target.updated_at = target.last_refreshed_at
-    db.commit()
-    db.refresh(target)
+        popular_notes, baseline_engagement, threshold_engagement = _pick_popular_notes(normalized_notes)
 
-    success_count = int(crawl_result["success_count"])
-    failed_count = int(crawl_result["failed_count"])
-    return {
-        "target": _serialize_target(target),
-        "candidate_count": len(note_links),
-        "crawled_count": success_count,
-        "failed_count": failed_count,
-        "popular_count": len(popular_notes),
-        "imported_count": len(saved_notes),
-        "baseline_engagement": baseline_engagement,
-        "threshold_engagement": threshold_engagement,
-        "items": [_serialize_popular_note(note, baseline_engagement) for note in popular_notes],
-    }
+        saved_notes = _save_normalized_notes(db, account, popular_notes) if popular_notes else []
+
+        target.config = {
+            **(target.config or {}),
+            "crawler_account_id": account.id,
+            "recent_months": payload.recent_months,
+            "max_notes": payload.max_notes,
+            "request_interval_seconds": payload.request_interval_seconds,
+        }
+        target.platform_account_id = account.id
+        target.last_refreshed_at = shanghai_now()
+        target.updated_at = target.last_refreshed_at
+        db.flush()
+
+        _refresh_target_profile(None, target, account, adapter=adapter)
+
+        success_count = int(crawl_result.get("success_count", 0))
+        failed_count = int(crawl_result.get("failed_count", 0))
+
+        yield _sse_event({
+            "type": "done",
+            "candidate_count": len(note_links),
+            "crawled_count": success_count,
+            "failed_count": failed_count,
+            "popular_count": len(popular_notes),
+            "imported_count": len(saved_notes),
+            "baseline_engagement": baseline_engagement,
+            "threshold_engagement": threshold_engagement,
+            "items": [_serialize_popular_note(note, baseline_engagement) for note in popular_notes],
+        })
+
+    return StreamingResponse(generate(), media_type="text/event-stream")
 
 
 def _existing_monitoring_urls(db: Session, user: User) -> set[str]:
