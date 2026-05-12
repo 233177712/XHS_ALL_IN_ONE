@@ -462,7 +462,8 @@ def crawl_popular_notes(
         target.platform_account_id = account.id
         target.last_refreshed_at = shanghai_now()
         target.updated_at = target.last_refreshed_at
-        db.flush()
+        db.commit()
+        db.refresh(target)
 
         _refresh_target_profile(None, target, account, adapter=adapter)
 
