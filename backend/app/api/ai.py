@@ -13,7 +13,7 @@ from backend.app.core.deps import get_current_user
 from backend.app.core.security import decrypt_text
 from backend.app.models import AiDraft, AiGeneratedAsset, ModelConfig, Task, User
 from backend.app.schemas.common import paginated
-from backend.app.services.ai_service import ImageAiClient, OpenAICompatibleImageClient, OpenAICompatibleTextClient, TextAiClient
+from backend.app.services.ai_service import ImageAiClient, OpenAICompatibleTextClient, ProviderAwareImageClient, TextAiClient
 
 router = APIRouter(prefix="/ai", tags=["ai"])
 
@@ -70,7 +70,7 @@ def get_text_ai_client() -> TextAiClient:
 
 
 def get_image_ai_client() -> ImageAiClient:
-    return OpenAICompatibleImageClient()
+    return ProviderAwareImageClient()
 
 
 def _serialize_draft(draft: AiDraft) -> dict:
@@ -132,6 +132,23 @@ def _serialize_generated_asset(asset: AiGeneratedAsset) -> dict[str, Any]:
         "file_path": asset.file_path,
         "created_at": asset.created_at.isoformat(),
     }
+
+
+def _image_model_label(model_config: ModelConfig) -> str:
+    return model_config.model_name or model_config.provider or "image-model"
+
+
+def _delete_generated_media_file_if_owned(asset: AiGeneratedAsset, current_user: User) -> None:
+    from backend.app.core.config import get_settings
+
+    if not asset.file_path.startswith("/api/files/media/"):
+        return
+    file_name = asset.file_path.rsplit("/", 1)[-1]
+    if not file_name.startswith(f"xhs-image-u{current_user.id}-"):
+        return
+    file_path = get_settings().storage_dir / "media" / file_name
+    if file_path.is_file():
+        file_path.unlink()
 
 
 def _recorded_text_task(
@@ -384,6 +401,7 @@ def delete_generated_image_asset(
     asset = db.get(AiGeneratedAsset, asset_id)
     if asset is None or asset.user_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Asset not found")
+    _delete_generated_media_file_if_owned(asset, current_user)
     db.delete(asset)
     db.commit()
     return {"id": asset_id, "status": "deleted"}
@@ -419,7 +437,7 @@ def generate_cover(
         user_id=current_user.id,
         draft_id=payload.draft_id,
         prompt=payload.prompt,
-        model_name=model_config.model_name,
+        model_name=_image_model_label(model_config),
         params={"size": payload.size, "style": payload.style, "raw": result.get("raw")},
         file_path=result.get("url") or "",
     )
@@ -456,7 +474,7 @@ def generate_image(
         asset = AiGeneratedAsset(
             user_id=current_user.id,
             prompt=payload.prompt,
-            model_name=model_config.model_name,
+            model_name=_image_model_label(model_config),
             params={"reference_images": payload.reference_images, "raw": result.get("raw")},
             file_path=result.get("url") or "",
         )

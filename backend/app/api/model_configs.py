@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import shutil
+import subprocess
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 from sqlalchemy import select
@@ -12,6 +15,8 @@ from backend.app.models import DEFAULT_TEXT_MODEL_NAME, ModelConfig, User
 from backend.app.schemas.common import paginated
 
 router = APIRouter(prefix="/model-configs", tags=["model-configs"])
+
+IMAGE_MODEL_PROVIDERS = {"openai-compatible", "codex-cli"}
 
 
 class ModelConfigCreateRequest(BaseModel):
@@ -57,6 +62,28 @@ def _normalize_model_name(model_type: str, model_name: str | None) -> str:
     return cleaned or _default_model_name(model_type)
 
 
+def _normalize_provider(model_type: str, provider: str | None) -> str:
+    cleaned = (provider or "").strip()
+    if not cleaned:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Provider is required")
+    if model_type == "image" and cleaned not in IMAGE_MODEL_PROVIDERS:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Unsupported image model provider: {cleaned}")
+    return cleaned
+
+
+def _normalize_config_fields(
+    *,
+    model_type: str,
+    provider: str,
+    model_name: str | None,
+    base_url: str | None,
+    api_key: str | None,
+) -> tuple[str, str, str]:
+    if model_type == "image" and provider == "codex-cli":
+        return "", "", ""
+    return _normalize_model_name(model_type, model_name), (base_url or "").strip(), (api_key or "").strip()
+
+
 def _get_owned_config(db: Session, current_user: User, config_id: int) -> ModelConfig:
     config = db.get(ModelConfig, config_id)
     if config is None or config.user_id != current_user.id:
@@ -96,14 +123,23 @@ def create_model_config(
     if payload.is_default:
         _clear_default_for_type(db, current_user.id, payload.model_type)
 
+    provider = _normalize_provider(payload.model_type, payload.provider)
+    model_name, base_url, api_key = _normalize_config_fields(
+        model_type=payload.model_type,
+        provider=provider,
+        model_name=payload.model_name,
+        base_url=payload.base_url,
+        api_key=payload.api_key,
+    )
+
     config = ModelConfig(
         user_id=current_user.id,
         name=payload.name,
         model_type=payload.model_type,
-        provider=payload.provider,
-        model_name=_normalize_model_name(payload.model_type, payload.model_name),
-        base_url=payload.base_url,
-        encrypted_api_key=encrypt_text(payload.api_key) if payload.api_key else "",
+        provider=provider,
+        model_name=model_name,
+        base_url=base_url,
+        encrypted_api_key=encrypt_text(api_key) if api_key else "",
         is_default=payload.is_default,
     )
     db.add(config)
@@ -121,6 +157,24 @@ def test_model_config(
     from backend.app.core.security import decrypt_text
 
     config = _get_owned_config(db, current_user, config_id)
+    if config.model_type == "image" and config.provider == "codex-cli":
+        executable = shutil.which("codex")
+        if executable is None:
+            return {"id": config.id, "status": "error", "message": "未安装 Codex CLI"}
+        try:
+            result = subprocess.run(
+                [executable, "login", "status"],
+                capture_output=True,
+                text=True,
+                timeout=15,
+                check=False,
+            )
+        except Exception as exc:
+            return {"id": config.id, "status": "error", "message": str(exc)[:200]}
+        output = (result.stdout or result.stderr or "").strip()
+        if result.returncode == 0 and "Logged in" in output:
+            return {"id": config.id, "status": "ok", "message": "Codex CLI 已安装并已登录"}
+        return {"id": config.id, "status": "error", "message": output[:150] or "Codex CLI 未登录"}
     if not config.encrypted_api_key:
         return {"id": config.id, "status": "error", "message": "未配置 API Key"}
     if not config.base_url:
@@ -170,16 +224,24 @@ def update_model_config(
 ):
     config = _get_owned_config(db, current_user, config_id)
 
+    next_provider = _normalize_provider(config.model_type, payload.provider or config.provider)
+
     if payload.name is not None:
         config.name = payload.name
-    if payload.provider is not None:
-        config.provider = payload.provider
-    if payload.model_name is not None:
-        config.model_name = _normalize_model_name(config.model_type, payload.model_name)
-    if payload.base_url is not None:
-        config.base_url = payload.base_url
-    if payload.api_key is not None:
-        config.encrypted_api_key = encrypt_text(payload.api_key) if payload.api_key else ""
+    config.provider = next_provider
+
+    if config.model_type == "image" and next_provider == "codex-cli":
+        config.model_name = ""
+        config.base_url = ""
+        config.encrypted_api_key = ""
+    else:
+        if payload.model_name is not None:
+            config.model_name = _normalize_model_name(config.model_type, payload.model_name)
+        if payload.base_url is not None:
+            config.base_url = payload.base_url.strip()
+        if payload.api_key is not None:
+            normalized_api_key = payload.api_key.strip()
+            config.encrypted_api_key = encrypt_text(normalized_api_key) if normalized_api_key else ""
     if payload.is_default is not None:
         if payload.is_default:
             _clear_default_for_type(db, current_user.id, config.model_type)

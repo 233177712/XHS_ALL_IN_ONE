@@ -4298,6 +4298,81 @@ def test_text_model_config_defaults_to_gpt_54_when_model_name_omitted(tmp_path):
         app.dependency_overrides.pop(db_dependency, None)
 
 
+def test_codex_cli_image_model_config_is_normalized_and_checked(tmp_path, monkeypatch):
+    import subprocess
+
+    db_dependency = _override_database(tmp_path)
+    owner_token = _register_and_get_access_token("model-codex-owner")
+    try:
+        create_response = client.post(
+            "/api/model-configs",
+            headers={"Authorization": f"Bearer {owner_token}"},
+            json={
+                "name": "Codex Image",
+                "model_type": "image",
+                "provider": "codex-cli",
+                "model_name": "should-be-cleared",
+                "base_url": "https://ignored.example.test/v1",
+                "api_key": "sk-ignored",
+                "is_default": True,
+            },
+        )
+
+        assert create_response.status_code == 200
+        created = create_response.json()
+        assert created["provider"] == "codex-cli"
+        assert created["model_name"] == ""
+        assert created["base_url"] == ""
+        assert created["has_api_key"] is False
+
+        monkeypatch.setattr("backend.app.api.model_configs.shutil.which", lambda _: "C:/tools/codex.exe")
+        monkeypatch.setattr(
+            "backend.app.api.model_configs.subprocess.run",
+            lambda *args, **_kwargs: subprocess.CompletedProcess(args[0], 0, stdout="Logged in using ChatGPT", stderr=""),
+        )
+
+        check_response = client.post(
+            f"/api/model-configs/{created['id']}/test",
+            headers={"Authorization": f"Bearer {owner_token}"},
+        )
+
+        assert check_response.status_code == 200
+        assert check_response.json()["status"] == "ok"
+        assert "Codex CLI 已安装并已登录" in check_response.json()["message"]
+    finally:
+        app.dependency_overrides.pop(db_dependency, None)
+
+
+def test_codex_cli_image_model_check_reports_missing_cli(tmp_path, monkeypatch):
+    db_dependency = _override_database(tmp_path)
+    owner_token = _register_and_get_access_token("model-codex-missing-owner")
+    try:
+        create_response = client.post(
+            "/api/model-configs",
+            headers={"Authorization": f"Bearer {owner_token}"},
+            json={
+                "name": "Codex Image",
+                "model_type": "image",
+                "provider": "codex-cli",
+                "is_default": True,
+            },
+        )
+        assert create_response.status_code == 200
+
+        monkeypatch.setattr("backend.app.api.model_configs.shutil.which", lambda _: None)
+
+        check_response = client.post(
+            f"/api/model-configs/{create_response.json()['id']}/test",
+            headers={"Authorization": f"Bearer {owner_token}"},
+        )
+
+        assert check_response.status_code == 200
+        assert check_response.json()["status"] == "error"
+        assert check_response.json()["message"] == "未安装 Codex CLI"
+    finally:
+        app.dependency_overrides.pop(db_dependency, None)
+
+
 def test_model_configs_update_and_set_default_are_owner_scoped(tmp_path):
     db_dependency = _override_database(tmp_path)
     owner_token = _register_and_get_access_token("model-update-owner")
@@ -4690,6 +4765,105 @@ def test_ai_image_routes_use_default_model_store_assets_and_enforce_scope(tmp_pa
         assert fake_client.calls == [
             ("generate_cover", "image-generate-test", "sk-image-secret", "低卡早餐封面", "1024x1024", "clean"),
             ("describe_image", "image-generate-test", "sk-image-secret", "https://cdn.example.test/cover.png", "描述卖点"),
+        ]
+    finally:
+        app.dependency_overrides.pop(get_image_ai_client, None)
+        app.dependency_overrides.pop(db_dependency, None)
+
+
+def test_ai_image_generate_and_describe_routes_use_codex_cli_provider(tmp_path):
+    from backend.app.api.ai import get_image_ai_client
+    from backend.app.services.ai_service import ProviderAwareImageClient
+
+    class FakeOpenAIImageClient:
+        def __init__(self):
+            self.calls = []
+
+        def generate_cover(self, *, model_config, api_key, prompt, size, style):
+            self.calls.append(("generate_cover", model_config.provider, prompt, size, style))
+            return {"url": "https://cdn.example.test/openai-cover.png", "raw": {"provider": "openai-compatible"}}
+
+        def generate_image(self, *, model_config, api_key, prompt, reference_images=None):
+            self.calls.append(("generate_image", model_config.provider, prompt, reference_images))
+            return {"url": "https://cdn.example.test/openai-generate.png", "raw": {"provider": "openai-compatible"}}
+
+        def describe_image(self, *, model_config, api_key, image_url, instruction):
+            self.calls.append(("describe_image", model_config.provider, image_url, instruction))
+            return "openai-description"
+
+    class FakeCodexImageClient:
+        def __init__(self):
+            self.calls = []
+
+        def generate_cover(self, *, model_config, api_key, prompt, size, style):
+            self.calls.append(("generate_cover", model_config.provider, prompt, size, style))
+            return {"url": "/api/files/media/xhs-image-u1-codex-cover.png", "raw": {"provider": "codex-cli"}}
+
+        def generate_image(self, *, model_config, api_key, prompt, reference_images=None):
+            self.calls.append(("generate_image", model_config.provider, prompt, reference_images or []))
+            return {"url": "/api/files/media/xhs-image-u1-codex-generate.png", "raw": {"provider": "codex-cli"}}
+
+        def describe_image(self, *, model_config, api_key, image_url, instruction):
+            self.calls.append(("describe_image", model_config.provider, image_url, instruction))
+            return "codex-description"
+
+    fake_openai = FakeOpenAIImageClient()
+    fake_codex = FakeCodexImageClient()
+    db_dependency = _override_database(tmp_path)
+    owner_token = _register_and_get_access_token("ai-image-codex-owner")
+    try:
+        app.dependency_overrides[get_image_ai_client] = lambda: ProviderAwareImageClient(
+            openai_client=fake_openai,
+            codex_client=fake_codex,
+        )
+        model_response = client.post(
+            "/api/model-configs",
+            headers={"Authorization": f"Bearer {owner_token}"},
+            json={
+                "name": "Codex Default Image",
+                "model_type": "image",
+                "provider": "codex-cli",
+                "is_default": True,
+            },
+        )
+        assert model_response.status_code == 200
+
+        generate_response = client.post(
+            "/api/ai/images/generate",
+            headers={"Authorization": f"Bearer {owner_token}"},
+            json={
+                "prompt": "把参考图改成更适合小红书封面的视觉风格",
+                "reference_images": ["/api/files/media/xhs-upload-u1-ref.png"],
+                "save_to_assets": True,
+            },
+        )
+        assert generate_response.status_code == 200
+        generated = generate_response.json()
+        assert generated["url"] == "/api/files/media/xhs-image-u1-codex-generate.png"
+        assert generated["asset"]["model_name"] == "codex-cli"
+
+        describe_response = client.post(
+            "/api/ai/images/describe",
+            headers={"Authorization": f"Bearer {owner_token}"},
+            json={"image_url": "/api/files/media/xhs-image-u1-codex-generate.png", "instruction": "提炼卖点"},
+        )
+        assert describe_response.status_code == 200
+        assert describe_response.json()["text"] == "codex-description"
+
+        list_response = client.get("/api/ai/images/assets", headers={"Authorization": f"Bearer {owner_token}"})
+        assert list_response.status_code == 200
+        assert list_response.json()["total"] == 1
+        assert list_response.json()["items"][0]["file_path"] == "/api/files/media/xhs-image-u1-codex-generate.png"
+
+        assert fake_openai.calls == []
+        assert fake_codex.calls == [
+            (
+                "generate_image",
+                "codex-cli",
+                "把参考图改成更适合小红书封面的视觉风格",
+                ["/api/files/media/xhs-upload-u1-ref.png"],
+            ),
+            ("describe_image", "codex-cli", "/api/files/media/xhs-image-u1-codex-generate.png", "提炼卖点"),
         ]
     finally:
         app.dependency_overrides.pop(get_image_ai_client, None)

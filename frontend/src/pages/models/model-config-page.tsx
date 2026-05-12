@@ -10,7 +10,24 @@ import {
   RobotOutlined,
   StarOutlined,
 } from "@ant-design/icons";
-import { Alert, Button, Card, Checkbox, Col, Empty, Form, Input, Popconfirm, Row, Segmented, Space, Spin, Tag, Typography } from "antd";
+import {
+  Alert,
+  Button,
+  Card,
+  Checkbox,
+  Col,
+  Empty,
+  Form,
+  Input,
+  Popconfirm,
+  Row,
+  Segmented,
+  Select,
+  Space,
+  Spin,
+  Tag,
+  Typography,
+} from "antd";
 import type { FormEvent } from "react";
 import { useEffect, useMemo, useState } from "react";
 
@@ -43,6 +60,22 @@ function defaultModelName(type: ModelType): string {
 
 function typeLabel(type: ModelType): string {
   return type === "text" ? "文本模型" : "图片模型";
+}
+
+function isCodexCliImageProvider(type: ModelType, provider: string): boolean {
+  return type === "image" && provider === "codex-cli";
+}
+
+function requiresModelName(type: ModelType, provider: string): boolean {
+  return type === "text" || provider !== "codex-cli";
+}
+
+function showsEndpointFields(type: ModelType, provider: string): boolean {
+  return type === "text" || provider !== "codex-cli";
+}
+
+function providerLabel(provider: string): string {
+  return provider === "codex-cli" ? "Codex CLI" : "OpenAI Compatible";
 }
 
 function ModelTypeIcon({ type }: { type: ModelType }) {
@@ -85,8 +118,12 @@ export function ModelConfigPage() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!form.name.trim() || !form.model_name.trim()) {
-      setError("请填写配置名称和模型名称。");
+    if (!form.name.trim()) {
+      setError("请填写配置名称。");
+      return;
+    }
+    if (requiresModelName(form.model_type, form.provider) && !form.model_name.trim()) {
+      setError("请填写模型名称。");
       return;
     }
 
@@ -96,10 +133,10 @@ export function ModelConfigPage() {
     const payload = {
       ...form,
       name: form.name.trim(),
-      model_name: form.model_name.trim(),
+      model_name: isCodexCliImageProvider(form.model_type, form.provider) ? "" : form.model_name.trim(),
       provider: form.provider.trim(),
-      base_url: form.base_url.trim(),
-      api_key: form.api_key.trim(),
+      base_url: showsEndpointFields(form.model_type, form.provider) ? form.base_url.trim() : "",
+      api_key: showsEndpointFields(form.model_type, form.provider) ? form.api_key.trim() : "",
     };
     try {
       if (editingId) {
@@ -121,7 +158,12 @@ export function ModelConfigPage() {
         });
         setMessage(`${typeLabel(created.model_type)}配置已保存。`);
       }
-      setForm({ ...emptyForm, model_type: form.model_type });
+      const nextType = form.model_type;
+      setForm({
+        ...emptyForm,
+        model_type: nextType,
+        model_name: defaultModelName(nextType),
+      });
     } catch {
       setError("模型配置保存失败。");
     } finally {
@@ -146,7 +188,12 @@ export function ModelConfigPage() {
 
   function handleCancelEdit() {
     setEditingId(null);
-    setForm({ ...emptyForm, model_type: form.model_type });
+    const nextType = form.model_type;
+    setForm({
+      ...emptyForm,
+      model_type: nextType,
+      model_name: defaultModelName(nextType),
+    });
   }
 
   async function handleDelete(configId: number) {
@@ -157,7 +204,12 @@ export function ModelConfigPage() {
       setConfigs((current) => current.filter((c) => c.id !== configId));
       if (editingId === configId) {
         setEditingId(null);
-        setForm({ ...emptyForm, model_type: form.model_type });
+        const nextType = form.model_type;
+        setForm({
+          ...emptyForm,
+          model_type: nextType,
+          model_name: defaultModelName(nextType),
+        });
       }
       setMessage("配置已删除。");
     } catch {
@@ -212,7 +264,7 @@ export function ModelConfigPage() {
         type="info"
         showIcon
         style={{ marginBottom: 16 }}
-        message="推荐的 OpenAI 兼容 API 服务"
+        message="图片模型支持 OpenAI 兼容接口与 Codex CLI"
         description={
           <>
             <Typography.Link href="https://api.openai-next.com/" target="_blank" rel="noreferrer">
@@ -229,6 +281,10 @@ export function ModelConfigPage() {
               阿里云百炼
             </Typography.Link>{" "}
             — 通义千问系列，Base URL: <Typography.Text code>https://dashscope.aliyuncs.com/compatible-mode/v1</Typography.Text>
+            <br />
+            <Typography.Text>如果选择 </Typography.Text>
+            <Typography.Text code>Codex CLI</Typography.Text>
+            <Typography.Text>，系统会直接使用本机已登录的 Codex CLI 处理图片生成与看图描述。</Typography.Text>
           </>
         }
       />
@@ -264,7 +320,9 @@ export function ModelConfigPage() {
                 setForm((current) => ({
                   ...current,
                   model_type: val as ModelType,
+                  provider: val === "text" ? "openai-compatible" : "openai-compatible",
                   model_name: defaultModelName(val as ModelType),
+                  ...(val === "image" ? { base_url: "", api_key: "" } : {}),
                 }))
               }
               block
@@ -285,43 +343,79 @@ export function ModelConfigPage() {
                     placeholder="例如：默认文本模型"
                   />
                 </Form.Item>
-                <Alert message="所有模型需兼容 OpenAI 接口规范" type="info" style={{ marginBottom: 16, fontSize: 12 }} />
-                <Form.Item label="模型名称">
-                  <Input
-                    value={form.model_name}
-                    onChange={(e) =>
-                      setForm((current) => ({
-                        ...current,
-                        model_name: e.target.value,
-                      }))
-                    }
-                    placeholder={form.model_type === "text" ? "gpt-4o-mini" : "gpt-image-1"}
+                <Alert
+                  message={form.model_type === "text" ? "文本模型需兼容 OpenAI 接口规范" : "图片模型可选择 OpenAI 兼容接口或 Codex CLI"}
+                  type="info"
+                  style={{ marginBottom: 16, fontSize: 12 }}
+                />
+                {form.model_type === "image" && (
+                  <Form.Item label="图片提供方">
+                    <Select
+                      value={form.provider}
+                      options={[
+                        { value: "openai-compatible", label: "OpenAI Compatible" },
+                        { value: "codex-cli", label: "Codex CLI" },
+                      ]}
+                      onChange={(value) =>
+                        setForm((current) => ({
+                          ...current,
+                          provider: value,
+                          ...(value === "codex-cli" ? { model_name: "", base_url: "", api_key: "" } : {}),
+                        }))
+                      }
+                    />
+                  </Form.Item>
+                )}
+                {requiresModelName(form.model_type, form.provider) && (
+                  <Form.Item label="模型名称">
+                    <Input
+                      value={form.model_name}
+                      onChange={(e) =>
+                        setForm((current) => ({
+                          ...current,
+                          model_name: e.target.value,
+                        }))
+                      }
+                      placeholder={form.model_type === "text" ? "gpt-4o-mini" : "gpt-image-1"}
+                    />
+                  </Form.Item>
+                )}
+                {showsEndpointFields(form.model_type, form.provider) ? (
+                  <>
+                    <Form.Item label="Base URL">
+                      <Input
+                        value={form.base_url}
+                        onChange={(e) =>
+                          setForm((current) => ({
+                            ...current,
+                            base_url: e.target.value,
+                          }))
+                        }
+                        placeholder="https://api.example.com/v1"
+                      />
+                    </Form.Item>
+                    <Form.Item label="API Key">
+                      <Input.Password
+                        value={form.api_key}
+                        onChange={(e) =>
+                          setForm((current) => ({
+                            ...current,
+                            api_key: e.target.value,
+                          }))
+                        }
+                        placeholder="保存后只显示是否已配置"
+                      />
+                    </Form.Item>
+                  </>
+                ) : (
+                  <Alert
+                    type="info"
+                    showIcon
+                    style={{ marginBottom: 16 }}
+                    message="Codex CLI 模式不需要配置模型名称、Base URL 或 API Key。"
+                    description="保存后点击“检查”，系统会验证本机是否已安装并登录 Codex CLI。"
                   />
-                </Form.Item>
-                <Form.Item label="Base URL">
-                  <Input
-                    value={form.base_url}
-                    onChange={(e) =>
-                      setForm((current) => ({
-                        ...current,
-                        base_url: e.target.value,
-                      }))
-                    }
-                    placeholder="https://api.example.com/v1"
-                  />
-                </Form.Item>
-                <Form.Item label="API Key">
-                  <Input.Password
-                    value={form.api_key}
-                    onChange={(e) =>
-                      setForm((current) => ({
-                        ...current,
-                        api_key: e.target.value,
-                      }))
-                    }
-                    placeholder="保存后只显示是否已配置"
-                  />
-                </Form.Item>
+                )}
                 <Form.Item>
                   <Checkbox
                     checked={form.is_default}
@@ -396,21 +490,31 @@ export function ModelConfigPage() {
                             )}
                           </Space>
                           <div style={{ marginTop: 4, marginBottom: 4 }}>
-                            <Text>{config.model_name || "未填写模型名称"}</Text>
+                            <Text>{config.model_name || providerLabel(config.provider)}</Text>
                           </div>
-                          <div
-                            style={{
-                              marginTop: 8,
-                              marginBottom: 8,
-                            }}
-                          >
-                            <Text type="secondary" style={{ fontSize: 12, marginRight: 12 }}>
-                              {config.base_url || "未配置 Base URL"}
-                            </Text>
-                            <Text type="secondary" style={{ fontSize: 12 }}>
-                              {config.has_api_key ? "已保存 API Key" : "未保存 API Key"}
-                            </Text>
-                          </div>
+                          {isCodexCliImageProvider(config.model_type, config.provider) ? (
+                            <div style={{ marginTop: 8, marginBottom: 8 }}>
+                              <Tag color="purple">{providerLabel(config.provider)}</Tag>
+                              <Text type="secondary" style={{ fontSize: 12 }}>
+                                使用本机已登录的 Codex CLI 处理图片生成与描述
+                              </Text>
+                            </div>
+                          ) : (
+                            <div
+                              style={{
+                                marginTop: 8,
+                                marginBottom: 8,
+                              }}
+                            >
+                              <Tag>{providerLabel(config.provider)}</Tag>
+                              <Text type="secondary" style={{ fontSize: 12, marginRight: 12 }}>
+                                {config.base_url || "未配置 Base URL"}
+                              </Text>
+                              <Text type="secondary" style={{ fontSize: 12 }}>
+                                {config.has_api_key ? "已保存 API Key" : "未保存 API Key"}
+                              </Text>
+                            </div>
+                          )}
                           <Space size={4} wrap>
                             <Button
                               size="small"
