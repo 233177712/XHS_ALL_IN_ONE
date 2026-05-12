@@ -9,6 +9,7 @@ import {
 } from "@ant-design/icons";
 import {
   Alert,
+  Avatar,
   Button,
   Card,
   Col,
@@ -65,6 +66,26 @@ function configNumber(target: MonitoringTarget | null, key: string, fallback: nu
 function configString(target: MonitoringTarget | null, key: string, fallback = ""): string {
   const value = target?.config?.[key];
   return typeof value === "string" ? value : fallback;
+}
+
+function profileOf(target: MonitoringTarget): Record<string, unknown> {
+  const config = target.config;
+  const profile = config?.profile;
+  return profile && typeof profile === "object" && !Array.isArray(profile) ? profile as Record<string, unknown> : {};
+}
+
+function profileText(target: MonitoringTarget, key: string, fallback = "-"): string {
+  const value = profileOf(target)[key];
+  if (value === null || value === undefined || value === "") return fallback;
+  return String(value);
+}
+
+function displayNameOf(target: MonitoringTarget): string {
+  return profileText(target, "nickname", target.name || "未命名账号");
+}
+
+function avatarOf(target: MonitoringTarget): string {
+  return profileText(target, "avatar_url", "");
 }
 
 function configBool(target: MonitoringTarget | null, key: string): boolean {
@@ -418,9 +439,15 @@ export function BenchmarkAccountsPage() {
                 <Card style={cardStyle} styles={{ body: { padding: 18 } }}>
                   <Space direction="vertical" size={10} style={{ width: "100%" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-                      <div style={{ minWidth: 0, flex: 1 }}>
-                        <Text strong style={{ display: "block" }} ellipsis={{ tooltip: target.name }}>{target.name || "未命名账号"}</Text>
-                        <Text type="secondary" style={{ fontSize: 12 }} ellipsis={{ tooltip: target.value }}>{target.value}</Text>
+                      <div style={{ minWidth: 0, flex: 1, display: "flex", gap: 12 }}>
+                        <Avatar src={avatarOf(target) || undefined} size={52} style={{ background: "#1668dc", flexShrink: 0, fontSize: 18 }}>
+                          {displayNameOf(target).slice(0, 1).toUpperCase()}
+                        </Avatar>
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                          <Text strong style={{ display: "block" }} ellipsis={{ tooltip: displayNameOf(target) }}>{displayNameOf(target)}</Text>
+                          <Text type="secondary" style={{ fontSize: 12, display: "block" }} ellipsis={{ tooltip: target.name }}>ID：{target.name || "-"}</Text>
+                          <Text type="secondary" style={{ fontSize: 12 }} ellipsis={{ tooltip: target.value }}>{target.value}</Text>
+                        </div>
                       </div>
                       <Space size={4}>
                         {scanEnabled && <Tag color="blue" icon={<ScanOutlined />}>自动扫描</Tag>}
@@ -428,9 +455,38 @@ export function BenchmarkAccountsPage() {
                       </Space>
                     </div>
 
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+                        gap: 8,
+                        padding: "10px 12px",
+                        background: "#141414",
+                        borderRadius: 8,
+                      }}
+                    >
+                      <div style={{ textAlign: "center" }}>
+                        <Text type="secondary" style={{ fontSize: 12 }}>粉丝</Text>
+                        <div style={{ fontSize: 15, fontWeight: 600 }}>{profileText(target, "followers")}</div>
+                      </div>
+                      <div style={{ textAlign: "center" }}>
+                        <Text type="secondary" style={{ fontSize: 12 }}>发帖</Text>
+                        <div style={{ fontSize: 15, fontWeight: 600 }}>{profileText(target, "note_count")}</div>
+                      </div>
+                      <div style={{ textAlign: "center" }}>
+                        <Text type="secondary" style={{ fontSize: 12 }}>关注</Text>
+                        <div style={{ fontSize: 15, fontWeight: 600 }}>{profileText(target, "following")}</div>
+                      </div>
+                      <div style={{ textAlign: "center" }}>
+                        <Text type="secondary" style={{ fontSize: 12 }}>获赞藏</Text>
+                        <div style={{ fontSize: 15, fontWeight: 600 }}>{profileText(target, "likes")}</div>
+                      </div>
+                    </div>
+
                     <Space size="middle" wrap>
                       <Text type="secondary" style={{ fontSize: 12 }}>添加时间：{formatShanghaiTime(target.created_at)}</Text>
                       <Text type="secondary" style={{ fontSize: 12 }}>最近抓取爆款：{formatShanghaiTime(target.last_refreshed_at)}</Text>
+                      <Text type="secondary" style={{ fontSize: 12 }}>小红书号：{profileText(target, "red_id")}</Text>
                     </Space>
 
                     {target.last_crawl_error && (
