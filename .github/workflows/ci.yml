@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt ruff
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install root Node dependencies
+        run: npm ci
+
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: frontend
+
+      - name: Backend lint
+        run: ruff check backend/ tests/ spider/ xhs_utils/
+
+      - name: Architecture check
+        run: python scripts/check_arch.py
+
+      - name: ts-prune baseline check
+        run: python scripts/check_ts_prune_baseline.py
+
+      - name: jscpd baseline check
+        run: python scripts/check_jscpd_baseline.py
+
+      - name: Frontend lint
+        run: npx eslint src/ --max-warnings 0
+        working-directory: frontend
+
+      - name: Frontend format check
+        run: npx prettier --check src/
+        working-directory: frontend
+
+      - name: Frontend style check
+        run: npx stylelint "src/**/*.css"
+        working-directory: frontend
+
+      - name: Frontend build
+        run: npm run build
+        working-directory: frontend
+
+      - name: Smoke test
+        run: python -m pytest tests/backend/test_platforms.py -x -q --tb=short

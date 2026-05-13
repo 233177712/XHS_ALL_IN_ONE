@@ -1,0 +1,18 @@
+{
+  "minLines": 10,
+  "minTokens": 70,
+  "threshold": 0,
+  "absolute": false,
+  "silent": true,
+  "ignore": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/.git/**",
+    "backend/alembic/**",
+    "apis/**",
+    "xhs_utils/**",
+    "tests/**",
+    "frontend/package-lock.json",
+    "package-lock.json"
+  ]
+}

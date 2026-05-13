@@ -18,6 +18,7 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.100%2B-009688)](https://fastapi.tiangolo.com/)
 [![React](https://img.shields.io/badge/React-19-61DAFB)](https://react.dev/)
 [![Docker](https://img.shields.io/badge/Docker-ready-2496ED)](https://www.docker.com/)
+[![CI](https://github.com/233177712/XHS_ALL_IN_ONE/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/233177712/XHS_ALL_IN_ONE/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-MIT-orange)](LICENSE)
 
 </div>
@@ -165,6 +166,13 @@ pip install -r requirements.txt
 npm install
 cd frontend && npm install && cd ..
 ```
+
+### 质量守门与 CI 监控
+
+- 本地提交前会自动运行：`lint-staged`、`ruff`、架构边界检查、`ts-prune baseline`、`jscpd baseline`、轻量 pytest 冒烟测试
+- 查看最近 5 次 GitHub Actions 结果：`npm run ci:status`
+- 实时等待最新一轮 CI 完成：`npm run ci:watch`
+- 当你接受当前死代码 / 重复代码现状并需要“重置基线”时：`npm run quality:update-baselines`
 
 ### 启动项目
 
