@@ -47,7 +47,7 @@ export function AddAccountDrawer({ open, onClose, onBound }: AddAccountDrawerPro
         </div>
       }
       placement="right"
-      width={420}
+      size={420}
       open={open}
       onClose={onClose}
       destroyOnClose

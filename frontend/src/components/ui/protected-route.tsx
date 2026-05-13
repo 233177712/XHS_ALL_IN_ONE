@@ -23,7 +23,7 @@ export function ProtectedRoute({ children }: RouteGuardProps) {
           background: "#0a0a0a",
         }}
       >
-        <Spin size="large" tip="正在验证登录状态..." />
+        <Spin size="large" description="正在验证登录状态..." />
       </div>
     );
   }
@@ -49,7 +49,7 @@ export function PublicOnlyRoute({ children }: RouteGuardProps) {
           background: "#0a0a0a",
         }}
       >
-        <Spin size="large" tip="正在验证登录状态..." />
+        <Spin size="large" description="正在验证登录状态..." />
       </div>
     );
   }

@@ -397,7 +397,7 @@ export function XhsImageStudioPage() {
               <>
                 {isLoading ? (
                   <div style={{ textAlign: "center", padding: 48 }}>
-                    <Spin tip="正在加载 AI 图片资产..." />
+                    <Spin description="正在加载 AI 图片资产..." />
                   </div>
                 ) : assets.length === 0 ? (
                   <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无 AI 图片资产。" style={{ padding: 32 }} />

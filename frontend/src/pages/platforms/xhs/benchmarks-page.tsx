@@ -331,7 +331,7 @@ export function XhsBenchmarksPage() {
 
       {isLoading ? (
         <div style={{ textAlign: "center", padding: 48 }}>
-          <Spin tip="正在加载竞品数据..." />
+          <Spin description="正在加载竞品数据..." />
         </div>
       ) : targets.length === 0 ? (
         <Card style={cardStyle}>

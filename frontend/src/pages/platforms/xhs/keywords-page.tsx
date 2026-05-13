@@ -193,7 +193,7 @@ export function XhsKeywordsPage() {
 
       {isLoading ? (
         <div style={{ textAlign: "center", padding: 48 }}>
-          <Spin tip="正在加载关键词组..." />
+          <Spin description="正在加载关键词组..." />
         </div>
       ) : groups.length === 0 ? (
         <Card style={{ background: "#1f1f1f", borderColor: "#303030" }}>

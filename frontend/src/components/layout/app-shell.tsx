@@ -315,7 +315,7 @@ export function AppShell() {
               title={themeMode === "dark" ? "切换为浅色模式" : "切换为暗色模式"}
               style={{ display: "flex", alignItems: "center", justifyContent: "center" }}
             />
-            <Dropdown dropdownRender={() => notificationDropdownContent} trigger={["click"]} placement="bottomRight">
+            <Dropdown popupRender={() => notificationDropdownContent} trigger={["click"]} placement="bottomRight">
               <Badge count={unreadCount} size="small" offset={[-2, 2]}>
                 <Button
                   type="text"

@@ -214,7 +214,7 @@ export function XhsAnalyticsPage() {
 
       {isLoading ? (
         <div style={{ textAlign: "center", padding: 48 }}>
-          <Spin tip="正在加载数据洞察..." />
+          <Spin description="正在加载数据洞察..." />
         </div>
       ) : (
         <>

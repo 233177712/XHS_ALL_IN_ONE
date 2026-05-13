@@ -54,6 +54,7 @@ import {
   fetchSavedNotes,
   fetchTags,
 } from "../../../lib/api";
+import { AuthImage, AuthImg } from "../../../components/media/auth-image";
 import { formatShanghaiTime } from "../../../lib/time";
 import type { NoteAsset, NoteComment, NotesExportResponse, SavedNote, Tag as TagType } from "../../../types";
 
@@ -670,6 +671,21 @@ export function XhsLibraryPage() {
           {notes.map((note) => {
             const cover = getSavedNoteCoverUrl(note);
             const kind = getRawNoteType(note);
+            const coverFallback = (
+              <div
+                style={{
+                  width: "100%",
+                  aspectRatio: "1/1",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "rgba(255,255,255,.2)",
+                  fontSize: 28,
+                }}
+              >
+                <PictureOutlined />
+              </div>
+            );
             return (
               <Col xs={12} sm={8} md={6} lg={4} xl={4} key={note.id}>
                 <Card
@@ -688,26 +704,15 @@ export function XhsLibraryPage() {
                         style={{ position: "absolute", top: 8, left: 8, zIndex: 2 }}
                       />
                       {cover ? (
-                        <img
+                        <AuthImg
                           src={cover}
                           alt={note.title}
+                          fallbackNode={coverFallback}
                           referrerPolicy="no-referrer"
                           style={{ width: "100%", aspectRatio: "1/1", objectFit: "cover", display: "block" }}
                         />
                       ) : (
-                        <div
-                          style={{
-                            width: "100%",
-                            aspectRatio: "1/1",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            color: "rgba(255,255,255,.2)",
-                            fontSize: 28,
-                          }}
-                        >
-                          <PictureOutlined />
-                        </div>
+                        coverFallback
                       )}
                       <Tag
                         color={kind.includes("video") ? "purple" : "blue"}
@@ -792,7 +797,7 @@ export function XhsLibraryPage() {
         title={selectedNote?.title || "笔记详情"}
         open={isDetailOpen}
         onClose={closeDetail}
-        width={640}
+        size={640}
         styles={{ body: { background: "#1a1a1a" } }}
       >
         {selectedNote && (
@@ -904,9 +909,24 @@ export function XhsLibraryPage() {
                           </Button>
                         </div>
                       ) : (
-                        <Image
+                        <AuthImage
                           key={a.id}
                           src={a.url}
+                          fallbackNode={
+                            <div
+                              style={{
+                                width: 80,
+                                height: 80,
+                                background: "#1f1f1f",
+                                borderRadius: 6,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                              }}
+                            >
+                              <Spin size="small" />
+                            </div>
+                          }
                           width={80}
                           height={80}
                           style={{ objectFit: "cover", borderRadius: 6 }}

@@ -452,7 +452,7 @@ export function ModelConfigPage() {
                 >
                   {isLoading ? (
                     <div style={{ textAlign: "center", padding: 24 }}>
-                      <Spin tip="正在加载配置..." />
+                      <Spin description="正在加载配置..." />
                     </div>
                   ) : grouped[type].length === 0 ? (
                     <Empty

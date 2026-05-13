@@ -107,6 +107,13 @@ function setAccessToken(token: string | null): void {
   accessToken = token;
 }
 
+async function ensureAccessToken(): Promise<string | null> {
+  if (!getAccessToken() && hasRefreshToken()) {
+    return refreshAccessToken();
+  }
+  return getAccessToken();
+}
+
 function persistAuthPayload(payload: AuthPayload): AuthPayload {
   setAccessToken(payload.access_token);
   if (payload.refresh_token) {
@@ -182,9 +189,7 @@ export async function fetchMe(): Promise<PlatformUser> {
 }
 
 export async function bootstrapAuth(): Promise<PlatformUser | null> {
-  if (!getAccessToken() && hasRefreshToken()) {
-    await refreshAccessToken();
-  }
+  await ensureAccessToken();
   if (!getAccessToken()) {
     return null;
   }
@@ -376,6 +381,7 @@ export async function uploadAssetFile(file: File): Promise<UploadedFile> {
 }
 
 export async function createMediaObjectUrl(downloadUrl: string): Promise<string> {
+  await ensureAccessToken();
   const endpoint = downloadUrl.startsWith("/api") ? downloadUrl.slice(4) : downloadUrl;
   const response = await http.get<Blob>(endpoint, { responseType: "blob" });
   return window.URL.createObjectURL(response.data);

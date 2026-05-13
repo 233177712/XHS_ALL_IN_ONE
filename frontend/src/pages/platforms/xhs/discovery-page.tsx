@@ -663,7 +663,7 @@ export function XhsDiscoveryPage() {
         title={selectedNote?.title || "笔记详情"}
         open={!!selectedNote}
         onClose={closeDetail}
-        width={640}
+        size={640}
         styles={{ body: { background: "#1a1a1a" } }}
       >
         {selectedNote && (
